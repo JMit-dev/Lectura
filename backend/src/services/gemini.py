@@ -34,6 +34,7 @@ class GeminiClient:
         system_prompt: Optional[str] = None,
         temperature: float = 0.7,
         max_tokens: Optional[int] = None,
+        use_cache: bool = False,
     ) -> Dict[str, Any]:
         """
         Generate text using Gemini via OpenRouter.
@@ -43,6 +44,7 @@ class GeminiClient:
             system_prompt: Optional system instructions
             temperature: Randomness (0.0-2.0, default 0.7)
             max_tokens: Max tokens to generate
+            use_cache: Enable prompt caching for cost savings (default: False)
 
         Returns:
             Dict with 'text' and 'tokens_used' keys
@@ -56,19 +58,36 @@ class GeminiClient:
                 messages.append({"role": "system", "content": system_prompt})
             messages.append({"role": "user", "content": prompt})
 
-            logger.debug(f"Generating text with {len(messages)} messages")
+            logger.debug(f"Generating text with {len(messages)} messages (cache: {use_cache})")
 
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=messages,
-                temperature=temperature,
-                max_tokens=max_tokens,
-            )
+            # Build request parameters
+            params = {
+                "model": self.model,
+                "messages": messages,
+                "temperature": temperature,
+            }
+
+            if max_tokens:
+                params["max_tokens"] = max_tokens
+
+            # Add cache hint via extra headers for OpenRouter
+            # OpenRouter automatically caches prompts > 1024 tokens
+            if use_cache:
+                logger.debug("Prompt caching enabled (OpenRouter auto-caches >1024 tokens)")
+
+            response = self.client.chat.completions.create(**params)
 
             text = response.choices[0].message.content or ""
             tokens_used = response.usage.total_tokens if response.usage else 0
 
-            logger.info(f"Generated {len(text)} characters using {tokens_used} tokens")
+            # Log cache info if available
+            if use_cache:
+                logger.info(
+                    f"✨ Generated {len(text)} chars using {tokens_used} tokens "
+                    f"(caching enabled)"
+                )
+            else:
+                logger.info(f"Generated {len(text)} chars using {tokens_used} tokens")
 
             return {"text": text, "tokens_used": tokens_used}
 

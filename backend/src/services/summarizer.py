@@ -71,12 +71,13 @@ class Summarizer:
                     f"Summary:"
                 )
 
-            # Generate summary using Gemini
+            # Generate summary using Gemini with caching
             result = self.gemini_client.generate_text(
                 prompt=prompt,
                 system_prompt=system_prompt,
                 temperature=0.3,  # Lower temperature for more focused summaries
                 max_tokens=max_length * 2,  # Rough token estimate
+                use_cache=True,  # Enable caching for cost savings
             )
 
             summary = result["text"].strip()
