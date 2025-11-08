@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     # OpenRouter API Configuration
     openrouter_api_key: str = ""  # Loaded from environment
     openrouter_base_url: str = "https://openrouter.ai/api/v1"
-    gemini_model: str = "google/gemini-flash-1.5"
+    gemini_model: str = "google/gemini-2.0-flash-exp:free"
 
     # Google Gemini API Configuration (for audio transcription)
     gemini_api_key: str = ""  # Loaded from environment

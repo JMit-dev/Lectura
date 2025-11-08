@@ -63,11 +63,10 @@ def validate_audio_file(file_path: str) -> Tuple[bool, Optional[str]]:
                 f"Supported: {', '.join(SUPPORTED_FORMATS.keys())}",
             )
 
-        # Check file size (max 25MB for Whisper API)
+        # Check file size
         file_size = os.path.getsize(file_path)
-        max_size = 25 * 1024 * 1024  # 25MB in bytes
-        if file_size > max_size:
-            return False, f"File too large: {file_size} bytes (max: {max_size})"
+        # Note: File size validation happens at API level, we just log here
+        logger.debug(f"File size: {file_size} bytes")
 
         logger.info(f"Audio file validated: {file_path} ({file_size} bytes)")
         return True, None
