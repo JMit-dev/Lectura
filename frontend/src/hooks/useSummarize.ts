@@ -20,31 +20,37 @@ export const useSummarize = () => {
   const [error, setError] = useState<string | null>(null)
   const [cache, setCache] = useState<Map<string, SummarizeResponse>>(new Map())
 
-  const summarize = useCallback(async (payload: SummarizeRequest) => {
-    // Check cache first
-    const cacheKey = `${payload.text.substring(0, 100)}-${payload.format}`
-    const cached = cache.get(cacheKey)
-    if (cached) {
-      setData(cached)
-      return cached
-    }
+  const summarize = useCallback(
+    async (payload: SummarizeRequest, options?: { force?: boolean }) => {
+      const cacheKey = `${payload.text.substring(0, 100)}-${payload.format}`
 
-    setIsLoading(true)
-    setError(null)
-    try {
-      const response = await summarizeText(payload)
-      setData(response)
-      // Cache the response
-      setCache((prev) => new Map(prev).set(cacheKey, response))
-      return response
-    } catch (err) {
-      const message = parseError(err)
-      setError(message)
-      throw err
-    } finally {
-      setIsLoading(false)
-    }
-  }, [cache])
+      // Use cache only when force flag isn't active
+      if (!options?.force) {
+        const cached = cache.get(cacheKey)
+        if (cached) {
+          setData(cached)
+          return cached
+        }
+      }
+
+      setIsLoading(true)
+      setError(null)
+      try {
+        const response = await summarizeText(payload)
+        setData(response)
+        // Cache the response
+        setCache((prev) => new Map(prev).set(cacheKey, response))
+        return response
+      } catch (err) {
+        const message = parseError(err)
+        setError(message)
+        throw err
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    [cache]
+  )
 
   const reset = () => {
     setData(null)

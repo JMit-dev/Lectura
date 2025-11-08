@@ -43,9 +43,8 @@ echo "✅ Virtual environment created"
 # Activate virtual environment
 source venv/bin/activate
 
-# Install dependencies
-pip install -r requirements.txt
-pip install -r requirements-dev.txt
+# Install dependencies (runtime + dev tooling)
+pip install -e '.[dev]'
 echo "✅ Backend dependencies installed"
 
 # Create .env if it doesn't exist

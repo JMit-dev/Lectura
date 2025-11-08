@@ -143,6 +143,13 @@ class FlashcardGenerator:
 
         return f"""Generate {count} flashcards ({difficulty}: {guidelines[difficulty]}).
 
+Rules:
+- Only pull from substantive lecture content; ignore greetings, jokes, and logistics.
+- Exclude quiz/test dates, homework reminders, or administrative remarks unless they teach a concept.
+- Ask clear, specific questions that require understanding rather than rote recall.
+- Provide concise but complete answers that reflect the underlying reasoning or formula.
+- Keep every flashcard unique and focused on the actual lesson.
+
 Return as JSON: [{{"question": "...", "answer": "...", "difficulty": "{difficulty}"}}]
 
 Text:

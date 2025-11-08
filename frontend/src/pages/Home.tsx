@@ -12,6 +12,48 @@ import useFlashcards from '../hooks/useFlashcards'
 import useTranslate from '../hooks/useTranslate'
 import type { Flashcard } from '../types/api'
 
+const questionMarker = (index: number) => `[[CARD_${index}_QUESTION]]`
+const answerMarker = (index: number) => `[[CARD_${index}_ANSWER]]`
+
+const buildFlashcardPayload = (cards: Flashcard[]) =>
+  cards
+    .map(
+      (card, index) =>
+        `${questionMarker(index)} ${card.question}\n${answerMarker(index)} ${card.answer}`
+    )
+    .join('\n\n')
+
+const parseFlashcardTranslation = (content: string, sourceCards: Flashcard[]): Flashcard[] =>
+  sourceCards.map((card, index) => {
+    const qMarker = questionMarker(index)
+    const aMarker = answerMarker(index)
+    const nextQMarker = index < sourceCards.length - 1 ? questionMarker(index + 1) : null
+
+    const questionStart = content.indexOf(qMarker)
+    const answerStart = content.indexOf(aMarker)
+
+    if (questionStart === -1 || answerStart === -1 || answerStart < questionStart) {
+      return { ...card }
+    }
+
+    const questionText = content.slice(questionStart + qMarker.length, answerStart).trim()
+
+    let answerEnd = content.length
+    if (nextQMarker) {
+      const nextIndex = content.indexOf(nextQMarker, answerStart + aMarker.length)
+      if (nextIndex !== -1) {
+        answerEnd = nextIndex
+      }
+    }
+    const answerText = content.slice(answerStart + aMarker.length, answerEnd).trim()
+
+    return {
+      ...card,
+      question: questionText || card.question,
+      answer: answerText || card.answer,
+    }
+  })
+
 const Home = () => {
   const transcribe = useTranscribe()
   const summarize = useSummarize()
@@ -37,6 +79,8 @@ const Home = () => {
     translate.reset()
     setSummaryTranslations({})
     setFlashcardTranslations({})
+    setIsSummaryGenerating(false)
+    setIsFlashcardsGenerating(false)
     try {
       await transcribe.transcribe(file)
     } catch {
@@ -51,17 +95,21 @@ const Home = () => {
     translate.reset()
     setSummaryTranslations({})
     setFlashcardTranslations({})
+    setIsSummaryGenerating(false)
+    setIsFlashcardsGenerating(false)
   }
 
   const handleGenerateSummary = async () => {
     if (!transcriptText) return
+    setIsSummaryGenerating(true)
+    setSummaryTranslations({})
     try {
       // Generate summary
-      const summaryResult = await summarize.summarize({ text: transcriptText })
+      const summaryResult = await summarize.summarize({ text: transcriptText }, { force: true })
 
       // If languages are selected (beyond English), generate translations before rendering
       const languagesToTranslate = selectedLanguages.filter((lang) => lang !== 'en')
-      if (languagesToTranslate.length > 0 && summaryResult) {
+      if (languagesToTranslate.length > 0 && summaryResult?.summary) {
         try {
           const result = await translate.translate({
             text: summaryResult.summary,
@@ -76,16 +124,23 @@ const Home = () => {
       }
     } catch {
       // handled via hook
+    } finally {
+      setIsSummaryGenerating(false)
     }
   }
 
   const handleGenerateFlashcards = async () => {
     if (!transcriptText) return
+    setIsFlashcardsGenerating(true)
+    setFlashcardTranslations({})
     try {
-      const result = await flashcards.generateFlashcards({
-        text: transcriptText,
-        difficulty: flashcardDifficulty,
-      })
+      const result = await flashcards.generateFlashcards(
+        {
+          text: transcriptText,
+          difficulty: flashcardDifficulty,
+        },
+        { force: true }
+      )
 
       // If languages are selected (beyond English), also generate translations for flashcards
       const languagesToTranslate = selectedLanguages.filter((lang) => lang !== 'en')
@@ -93,9 +148,7 @@ const Home = () => {
         const translations: Record<string, Flashcard[]> = {}
 
         // Combine all flashcards into a single text for batch translation
-        const flashcardsText = result.flashcards
-          .map((card, idx) => `[CARD ${idx + 1}]\nQuestion: ${card.question}\nAnswer: ${card.answer}`)
-          .join('\n\n')
+        const flashcardsText = buildFlashcardPayload(result.flashcards)
 
         try {
           const translateResult = await translate.translate({
@@ -106,24 +159,7 @@ const Home = () => {
           if (translateResult?.translations) {
             // Parse each language's translation back into flashcards
             for (const [lang, translatedText] of Object.entries(translateResult.translations)) {
-              const translatedCards: Flashcard[] = []
-
-              // Split by card markers
-              const cardMatches = translatedText.split(/\[CARD \d+\]/).filter((s) => s.trim())
-
-              for (let i = 0; i < cardMatches.length && i < result.flashcards.length; i++) {
-                const cardText = cardMatches[i]
-                const questionMatch = cardText.match(/Question:\s*(.+?)(?:\nAnswer:|$)/s)
-                const answerMatch = cardText.match(/Answer:\s*(.+?)$/s)
-
-                translatedCards.push({
-                  question: questionMatch?.[1]?.trim() || result.flashcards[i].question,
-                  answer: answerMatch?.[1]?.trim() || result.flashcards[i].answer,
-                  difficulty: result.flashcards[i].difficulty,
-                })
-              }
-
-              translations[lang] = translatedCards
+              translations[lang] = parseFlashcardTranslation(translatedText, result.flashcards)
             }
 
             setFlashcardTranslations(translations)
@@ -134,6 +170,8 @@ const Home = () => {
       }
     } catch {
       // handled via hook
+    } finally {
+      setIsFlashcardsGenerating(false)
     }
   }
 
@@ -182,11 +220,11 @@ const Home = () => {
               </div>
               <button
                 type="button"
-                disabled={!transcriptText || summarize.isLoading || transcribe.isLoading}
+                disabled={!transcriptText || summarize.isLoading || transcribe.isLoading || isSummaryGenerating}
                 onClick={handleGenerateSummary}
                 className="rounded-full bg-indigo-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-500"
               >
-                {summarize.isLoading ? 'Summarizing...' : 'Generate Summary'}
+                {summarize.isLoading || isSummaryGenerating ? 'Summarizing...' : 'Generate Summary'}
               </button>
             </div>
             {summarize.error && <ErrorMessage message={summarize.error} />}
@@ -200,11 +238,11 @@ const Home = () => {
               </div>
               <button
                 type="button"
-                disabled={!transcriptText || flashcards.isLoading || transcribe.isLoading}
+                disabled={!transcriptText || flashcards.isLoading || transcribe.isLoading || isFlashcardsGenerating}
                 onClick={handleGenerateFlashcards}
                 className="rounded-full bg-indigo-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-500"
               >
-                {flashcards.isLoading ? 'Generating...' : 'Generate Flashcards'}
+                {flashcards.isLoading || isFlashcardsGenerating ? 'Generating...' : 'Generate Flashcards'}
               </button>
             </div>
 
@@ -243,7 +281,7 @@ const Home = () => {
               summary={
                 <SummaryView
                   summary={summarize.data?.summary}
-                  isLoading={summarize.isLoading}
+                  isLoading={summarize.isLoading || isSummaryGenerating}
                   translations={summaryTranslations}
                   selectedLanguages={selectedLanguages}
                 />
@@ -251,7 +289,7 @@ const Home = () => {
               flashcards={
                 <FlashcardsView
                   flashcards={flashcards.data?.flashcards}
-                  isLoading={flashcards.isLoading}
+                  isLoading={flashcards.isLoading || isFlashcardsGenerating}
                   translations={flashcardTranslations}
                   selectedLanguages={selectedLanguages}
                 />

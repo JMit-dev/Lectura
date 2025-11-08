@@ -23,7 +23,7 @@ class Summarizer:
         logger.info("Initialized Summarizer with direct Gemini API")
 
     def summarize(
-        self, text: str, format: str | None = None, max_length: int = 500
+        self, text: str, format: str | None = None, max_length: int = 1200
     ) -> Dict[str, Any]:
         """
         Summarize text using Gemini.
@@ -49,15 +49,27 @@ class Summarizer:
 
             # Use flexible format with headers, bullets, and paragraphs as needed
             system_prompt = (
-                "You are an expert at creating concise, well-structured summaries. "
-                "Create clear, organized summaries using the most effective format."
+                "You are a meticulous university note-taker who converts raw lecture transcripts "
+                "into comprehensive, Markdown-formatted study notes. "
+                "You filter out jokes, greetings, administrative chatter, and schedule reminders, "
+                "focusing exclusively on instructional content."
             )
             prompt = (
-                f"Summarize the following text using the most effective format. "
-                f"Use headers (##), bullet points (•), and short paragraphs where appropriate. "
-                f"Maximum {max_length} words. Focus on clarity and organization.\n\n"
-                f"Text:\n{text}\n\n"
-                f"Summary:"
+                "You will receive a full lecture transcript that may include professor banter, "
+                "attendance checks, or other irrelevant chatter.\n\n"
+                "Create extremely detailed Markdown notes that capture every meaningful concept, "
+                "definition, example, formula, and explanation from the LESSON ONLY.\n"
+                "Follow these rules:\n"
+                "1. Ignore filler dialogue, jokes, personal stories, or small talk.\n"
+                "2. Exclude logistics such as quiz/test dates, homework reminders, or grading info unless they explain a concept.\n"
+                "3. Organize the output with clear Markdown structure: start with `## Overview`, then add `###` subsections per topic, "
+                "using bullet lists, numbered steps, tables, or nested bullets as needed.\n"
+                "4. Highlight definitions, theorems, or formulas using bold labels and inline code where appropriate.\n"
+                "5. When the speaker revisits a concept, merge the information so the final notes are cohesive and non-redundant.\n"
+                f"6. Aim for up to {max_length} words if the source allows—be exhaustive yet well-organized.\n\n"
+                "Transcript:\n"
+                f"{text}\n\n"
+                "Return ONLY Markdown-formatted notes."
             )
 
             # Generate summary using direct Gemini API
@@ -65,8 +77,8 @@ class Summarizer:
             response = self.model.generate_content(
                 full_prompt,
                 generation_config=genai.GenerationConfig(
-                    temperature=0.3,
-                    max_output_tokens=max_length * 2,
+                    temperature=0.25,
+                    max_output_tokens=max_length * 3,
                 ),
             )
 

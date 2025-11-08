@@ -68,9 +68,8 @@ cd backend
 python3.11 -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-# Install dependencies
-pip install -r requirements.txt
-pip install -r requirements-dev.txt
+# Install dependencies (includes dev tooling)
+pip install -e .[dev]
 
 # Set up environment
 cp .env.example .env

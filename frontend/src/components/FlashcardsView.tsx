@@ -31,7 +31,14 @@ export const FlashcardsView = ({
   const [isFlipped, setIsFlipped] = useState(false)
   const [currentLang, setCurrentLang] = useState<string>('en')
 
-  const displayCards = currentLang === 'en' ? flashcards : translations[currentLang]
+  useEffect(() => {
+    if (currentLang !== 'en' && !translations[currentLang]) {
+      setCurrentLang('en')
+    }
+  }, [currentLang, translations])
+
+  const translatedCards = currentLang === 'en' ? undefined : translations[currentLang]
+  const displayCards = translatedCards && translatedCards.length > 0 ? translatedCards : flashcards
 
   const availableLanguages = useMemo(() => {
     const langs = [{ code: 'en', label: 'English' }]

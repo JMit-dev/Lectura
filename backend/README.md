@@ -60,8 +60,11 @@ python3 -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install dependencies
-pip install -r requirements.txt
-pip install -r requirements-dev.txt
+# For production/runtime tooling only
+pip install -e .
+
+# For full dev tooling (linters, tests, hooks)
+pip install -e .[dev]
 
 # Set up environment variables
 cp .env.example .env

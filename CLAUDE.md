@@ -815,13 +815,15 @@ jobs:
         with:
           python-version: '3.11'
           cache: 'pip'
-          cache-dependency-path: backend/requirements.txt
+          cache-dependency-path: |
+            backend/pyproject.toml
+            backend/requirements.txt
+            backend/requirements-dev.txt
 
       - name: Install dependencies
         run: |
           cd backend
-          pip install -r requirements.txt
-          pip install -r requirements-dev.txt
+          pip install -e '.[dev]'
 
       - name: Lint with flake8
         run: |
@@ -1122,8 +1124,7 @@ cd lectura
 cd backend
 python3.11 -m venv venv
 source venv/bin/activate  # or venv\Scripts\activate on Windows
-pip install -r requirements.txt
-pip install -r requirements-dev.txt
+pip install -e '.[dev]'
 
 # Create .env file
 cp .env.example .env
@@ -1254,8 +1255,7 @@ mypy==1.7.1
 pre-commit==3.6.0
 EOF
 
-pip install -r requirements.txt
-pip install -r requirements-dev.txt
+pip install -e '.[dev]'
 
 # Initialize frontend
 cd ../frontend

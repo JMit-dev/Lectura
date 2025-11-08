@@ -20,31 +20,37 @@ export const useFlashcards = () => {
   const [error, setError] = useState<string | null>(null)
   const [cache, setCache] = useState<Map<string, FlashcardResponse>>(new Map())
 
-  const generateFlashcards = useCallback(async (payload: FlashcardRequest) => {
-    // Check cache first
-    const cacheKey = `${payload.text.substring(0, 100)}-${payload.count}-${payload.difficulty}`
-    const cached = cache.get(cacheKey)
-    if (cached) {
-      setData(cached)
-      return cached
-    }
+  const generateFlashcards = useCallback(
+    async (payload: FlashcardRequest, options?: { force?: boolean }) => {
+      // Check cache first
+      const cacheKey = `${payload.text.substring(0, 100)}-${payload.count}-${payload.difficulty}`
 
-    setIsLoading(true)
-    setError(null)
-    try {
-      const response = await fetchFlashcards(payload)
-      setData(response)
-      // Cache the response
-      setCache((prev) => new Map(prev).set(cacheKey, response))
-      return response
-    } catch (err) {
-      const message = parseError(err)
-      setError(message)
-      throw err
-    } finally {
-      setIsLoading(false)
-    }
-  }, [cache])
+      if (!options?.force) {
+        const cached = cache.get(cacheKey)
+        if (cached) {
+          setData(cached)
+          return cached
+        }
+      }
+
+      setIsLoading(true)
+      setError(null)
+      try {
+        const response = await fetchFlashcards(payload)
+        setData(response)
+        // Cache the response
+        setCache((prev) => new Map(prev).set(cacheKey, response))
+        return response
+      } catch (err) {
+        const message = parseError(err)
+        setError(message)
+        throw err
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    [cache]
+  )
 
   const reset = () => {
     setData(null)

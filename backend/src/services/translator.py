@@ -119,9 +119,16 @@ class Translator:
                     "the meaning, tone, and formatting."
                 )
 
+                preserve_marker_instruction = ""
+                if "[[" in text and "]]" in text:
+                    preserve_marker_instruction = (
+                        " Keep any tokens surrounded by double square brackets exactly as they appear."
+                    )
+
                 prompt = (
                     f"Translate the following text to {lang_name}. "
-                    f"Maintain any formatting (bullet points, paragraphs, etc.):\n\n"
+                    f"Maintain any formatting (bullet points, paragraphs, etc.)."
+                    f"{preserve_marker_instruction}\n\n"
                     f"{text}\n\n"
                     f"Translation:"
                 )
