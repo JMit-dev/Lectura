@@ -18,13 +18,16 @@ const Home = () => {
   const flashcards = useFlashcards()
   const translate = useTranslate()
 
-  const [summaryFormat, setSummaryFormat] = useState<'paragraph' | 'bullet_points'>('paragraph')
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>(['en'])
   const [flashcardDifficulty, setFlashcardDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium')
 
   // Separate translation states for summary and flashcards
   const [summaryTranslations, setSummaryTranslations] = useState<Record<string, string>>({})
   const [flashcardTranslations, setFlashcardTranslations] = useState<Record<string, Flashcard[]>>({})
+
+  // Loading states that include translation time
+  const [isSummaryGenerating, setIsSummaryGenerating] = useState(false)
+  const [isFlashcardsGenerating, setIsFlashcardsGenerating] = useState(false)
 
   const transcriptText = transcribe.data?.transcript ?? ''
 
@@ -50,58 +53,30 @@ const Home = () => {
     setFlashcardTranslations({})
   }
 
-  const runSummarize = async (format: 'paragraph' | 'bullet_points') => {
-    if (!transcriptText) return
-    setSummaryFormat(format)
-    try {
-      await summarize.summarize({ text: transcriptText, format })
-    } catch {
-      // handled via hook
-    }
-  }
-
   const handleGenerateSummary = async () => {
     if (!transcriptText) return
-    // Generate BOTH formats in parallel so switching tabs is instant
     try {
-      const [paragraphResult, bulletResult] = await Promise.all([
-        summarize.summarize({ text: transcriptText, format: 'paragraph' }),
-        summarize.summarize({ text: transcriptText, format: 'bullet_points' }),
-      ])
+      // Generate summary
+      const summaryResult = await summarize.summarize({ text: transcriptText })
 
-      // If languages are selected, also generate translations
-      if (selectedLanguages.length > 0 && paragraphResult && bulletResult) {
-        const translations: Record<string, string> = {}
-
-        // Translate the current format's summary
-        const currentSummary = summaryFormat === 'paragraph' ? paragraphResult.summary : bulletResult.summary
-
-        for (const lang of selectedLanguages) {
-          try {
-            const result = await translate.translate({
-              text: currentSummary,
-              target_languages: [lang],
-            })
-            if (result?.translations?.[lang]) {
-              translations[lang] = result.translations[lang]
-            }
-          } catch {
-            // Skip failed translations
+      // If languages are selected (beyond English), generate translations before rendering
+      const languagesToTranslate = selectedLanguages.filter((lang) => lang !== 'en')
+      if (languagesToTranslate.length > 0 && summaryResult) {
+        try {
+          const result = await translate.translate({
+            text: summaryResult.summary,
+            target_languages: languagesToTranslate,
+          })
+          if (result?.translations) {
+            setSummaryTranslations(result.translations)
           }
+        } catch {
+          // Skip failed translations, summary will still render in English
         }
-
-        setSummaryTranslations(translations)
       }
     } catch {
       // handled via hook
     }
-  }
-
-  const handleFormatChange = (format: 'paragraph' | 'bullet_points') => {
-    setSummaryFormat(format)
-    // Both formats should already be cached from handleGenerateSummary
-    // The hook will return instantly if cached, so safe to call
-    void runSummarize(format)
   }
 
   const handleGenerateFlashcards = async () => {
@@ -112,68 +87,58 @@ const Home = () => {
         difficulty: flashcardDifficulty,
       })
 
-      // If languages are selected, also generate translations for flashcards
-      if (selectedLanguages.length > 0 && result?.flashcards) {
+      // If languages are selected (beyond English), also generate translations for flashcards
+      const languagesToTranslate = selectedLanguages.filter((lang) => lang !== 'en')
+      if (languagesToTranslate.length > 0 && result?.flashcards) {
         const translations: Record<string, Flashcard[]> = {}
 
-        for (const lang of selectedLanguages) {
-          const translatedCards = []
+        // Combine all flashcards into a single text for batch translation
+        const flashcardsText = result.flashcards
+          .map((card, idx) => `[CARD ${idx + 1}]\nQuestion: ${card.question}\nAnswer: ${card.answer}`)
+          .join('\n\n')
 
-          for (const card of result.flashcards) {
-            try {
-              // Translate question and answer together
-              const combinedText = `Question: ${card.question}\nAnswer: ${card.answer}`
-              const translateResult = await translate.translate({
-                text: combinedText,
-                target_languages: [lang],
-              })
+        try {
+          const translateResult = await translate.translate({
+            text: flashcardsText,
+            target_languages: languagesToTranslate,
+          })
 
-              if (translateResult?.translations?.[lang]) {
-                // Parse the translated text back into question and answer
-                const translated = translateResult.translations[lang]
-                const questionMatch = translated.match(/Question:\s*(.+?)(?:\nAnswer:|$)/s)
-                const answerMatch = translated.match(/Answer:\s*(.+?)$/s)
+          if (translateResult?.translations) {
+            // Parse each language's translation back into flashcards
+            for (const [lang, translatedText] of Object.entries(translateResult.translations)) {
+              const translatedCards: Flashcard[] = []
+
+              // Split by card markers
+              const cardMatches = translatedText.split(/\[CARD \d+\]/).filter((s) => s.trim())
+
+              for (let i = 0; i < cardMatches.length && i < result.flashcards.length; i++) {
+                const cardText = cardMatches[i]
+                const questionMatch = cardText.match(/Question:\s*(.+?)(?:\nAnswer:|$)/s)
+                const answerMatch = cardText.match(/Answer:\s*(.+?)$/s)
 
                 translatedCards.push({
-                  question: questionMatch?.[1]?.trim() || card.question,
-                  answer: answerMatch?.[1]?.trim() || card.answer,
-                  difficulty: card.difficulty,
+                  question: questionMatch?.[1]?.trim() || result.flashcards[i].question,
+                  answer: answerMatch?.[1]?.trim() || result.flashcards[i].answer,
+                  difficulty: result.flashcards[i].difficulty,
                 })
               }
-            } catch {
-              // If translation fails, use original
-              translatedCards.push(card)
+
+              translations[lang] = translatedCards
             }
+
+            setFlashcardTranslations(translations)
           }
-
-          translations[lang] = translatedCards
+        } catch {
+          // Skip failed translations
         }
-
-        setFlashcardTranslations(translations)
       }
     } catch {
       // handled via hook
     }
   }
 
-  const handleTranslate = async () => {
-    if (!transcriptText || selectedLanguages.length === 0) return
-    try {
-      await translate.translate({
-        text: transcriptText,
-        target_languages: selectedLanguages,
-      })
-    } catch {
-      // handled via hook
-    }
-  }
-
   const showResults =
-    Boolean(transcriptText) ||
-    summarize.isLoading ||
-    flashcards.isLoading ||
-    translate.isLoading ||
-    Boolean(summarize.data || flashcards.data || translate.data)
+    Boolean(transcriptText) || summarize.isLoading || flashcards.isLoading || Boolean(summarize.data || flashcards.data)
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white py-12">
@@ -261,26 +226,14 @@ const Home = () => {
         </section>
 
         <section className="mt-6 space-y-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900">Translate transcript</h3>
-              <p className="text-sm text-gray-500">Select languages and translate instantly</p>
-            </div>
-            <button
-              type="button"
-              disabled={
-                !transcriptText || selectedLanguages.length === 0 || translate.isLoading || transcribe.isLoading
-              }
-              onClick={handleTranslate}
-              className="rounded-full bg-indigo-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-500"
-            >
-              {translate.isLoading ? 'Translating...' : 'Translate'}
-            </button>
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">Translation languages</h3>
+            <p className="text-sm text-gray-500">
+              Select languages for automatic translation when generating summaries and flashcards
+            </p>
           </div>
 
           <LanguageSelector selected={selectedLanguages} onChange={setSelectedLanguages} />
-
-          {translate.error && <ErrorMessage message={translate.error} />}
         </section>
 
         {showResults && (
@@ -290,9 +243,7 @@ const Home = () => {
               summary={
                 <SummaryView
                   summary={summarize.data?.summary}
-                  format={summaryFormat}
                   isLoading={summarize.isLoading}
-                  onFormatChange={handleFormatChange}
                   translations={summaryTranslations}
                   selectedLanguages={selectedLanguages}
                 />

@@ -18,7 +18,7 @@ class SummarizeRequest(BaseModel):
     """Request model for summarization"""
 
     text: str
-    format: str = Field(default="bullet_points", pattern="^(bullet_points|paragraph)$")
+    format: Optional[str] = Field(default=None)
 
 
 class SummarizeResponse(BaseModel):

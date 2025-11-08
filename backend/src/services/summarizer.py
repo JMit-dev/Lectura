@@ -23,59 +23,42 @@ class Summarizer:
         logger.info("Initialized Summarizer with direct Gemini API")
 
     def summarize(
-        self, text: str, format: str = "bullet_points", max_length: int = 500
+        self, text: str, format: str | None = None, max_length: int = 500
     ) -> Dict[str, Any]:
         """
         Summarize text using Gemini.
 
         Args:
             text: Text to summarize
-            format: Format of summary ('bullet_points' or 'paragraph')
+            format: Format of summary (deprecated, ignored if provided)
             max_length: Maximum length of summary in words
 
         Returns:
             Dict with 'summary' (str), 'original_length' (int), and 'summary_length' (int)
 
         Raises:
-            ValueError: If text is empty or format is invalid
+            ValueError: If text is empty
             Exception: If summarization fails
         """
         if not text or not text.strip():
             raise ValueError("Text cannot be empty")
 
-        if format not in ["bullet_points", "paragraph"]:
-            raise ValueError(f"Invalid format: {format}. Must be 'bullet_points' or 'paragraph'")
-
         try:
             original_length = len(text.split())
-            logger.info(
-                f"Summarizing {original_length} words in {format} format "
-                f"(max: {max_length} words)"
-            )
+            logger.info(f"Summarizing {original_length} words (max: {max_length} words)")
 
-            # Create prompt based on format
-            if format == "bullet_points":
-                system_prompt = (
-                    "You are an expert at creating concise, informative summaries. "
-                    "Create bullet-point summaries that capture key ideas."
-                )
-                prompt = (
-                    f"Summarize the following text as clear bullet points. "
-                    f"Maximum {max_length} words. Focus on the main ideas and key takeaways.\n\n"
-                    f"Text:\n{text}\n\n"
-                    f"Summary (bullet points):"
-                )
-            else:  # paragraph
-                system_prompt = (
-                    "You are an expert at creating concise, flowing summaries. "
-                    "Create paragraph-form summaries that capture the essence of the content."
-                )
-                prompt = (
-                    f"Summarize the following text in a concise paragraph. "
-                    f"Maximum {max_length} words. Capture the main ideas clearly.\n\n"
-                    f"Text:\n{text}\n\n"
-                    f"Summary:"
-                )
+            # Use flexible format with headers, bullets, and paragraphs as needed
+            system_prompt = (
+                "You are an expert at creating concise, well-structured summaries. "
+                "Create clear, organized summaries using the most effective format."
+            )
+            prompt = (
+                f"Summarize the following text using the most effective format. "
+                f"Use headers (##), bullet points (•), and short paragraphs where appropriate. "
+                f"Maximum {max_length} words. Focus on clarity and organization.\n\n"
+                f"Text:\n{text}\n\n"
+                f"Summary:"
+            )
 
             # Generate summary using direct Gemini API
             full_prompt = f"{system_prompt}\n\n{prompt}"

@@ -7,7 +7,7 @@ export interface TranscribeResponse {
 
 export interface SummarizeRequest {
   text: string
-  format?: 'bullet_points' | 'paragraph'
+  format?: string
 }
 
 export interface SummarizeResponse {

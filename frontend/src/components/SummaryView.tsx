@@ -3,22 +3,16 @@ import { Check, Copy, Download, Languages } from 'lucide-react'
 import { supportedLanguages } from '../constants/languages'
 import LoadingSpinner from './LoadingSpinner'
 
-type SummaryFormat = 'bullet_points' | 'paragraph'
-
 interface SummaryViewProps {
   summary?: string
-  format: SummaryFormat
   isLoading?: boolean
-  onFormatChange?: (format: SummaryFormat) => void
   translations?: Record<string, string>
   selectedLanguages?: string[]
 }
 
 export const SummaryView = ({
   summary,
-  format,
   isLoading = false,
-  onFormatChange,
   translations = {},
   selectedLanguages = [],
 }: SummaryViewProps) => {
@@ -55,7 +49,7 @@ export const SummaryView = ({
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `summary-${format}-${currentLang}.txt`
+    link.download = `summary-${currentLang}.txt`
     link.click()
     URL.revokeObjectURL(url)
   }
@@ -79,21 +73,6 @@ export const SummaryView = ({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
-        <div className="inline-flex rounded-full bg-indigo-50 p-1">
-          {(['paragraph', 'bullet_points'] as SummaryFormat[]).map((option) => (
-            <button
-              key={option}
-              type="button"
-              onClick={() => onFormatChange?.(option)}
-              className={`rounded-full px-4 py-1 text-xs font-semibold transition ${
-                option === format ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500'
-              }`}
-            >
-              {option === 'paragraph' ? 'Paragraph' : 'Bullet Points'}
-            </button>
-          ))}
-        </div>
-
         {availableLanguages.length > 1 && (
           <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1">
             <Languages className="h-3 w-3 text-gray-500" />
@@ -146,17 +125,7 @@ export const SummaryView = ({
       </div>
 
       <article className="max-h-96 overflow-y-auto rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-        {format === 'bullet_points' ? (
-          <ul className="list-inside list-disc space-y-2 text-gray-800">
-            {(displayText || '').split('\n').map((item, idx) => (
-              <li key={`bullet-${idx}`} className="leading-relaxed">
-                {item.trim()}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="whitespace-pre-line text-gray-800">{displayText}</p>
-        )}
+        <div className="whitespace-pre-line text-gray-800 leading-relaxed">{displayText}</div>
       </article>
     </div>
   )
