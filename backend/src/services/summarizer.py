@@ -1,7 +1,7 @@
 """Text summarization service using Gemini"""
 
 import logging
-from typing import Dict
+from typing import Any, Dict
 
 from src.services.gemini import GeminiClient
 
@@ -18,7 +18,7 @@ class Summarizer:
 
     def summarize(
         self, text: str, format: str = "bullet_points", max_length: int = 500
-    ) -> Dict[str, int]:
+    ) -> Dict[str, Any]:
         """
         Summarize text using Gemini.
 
@@ -28,7 +28,7 @@ class Summarizer:
             max_length: Maximum length of summary in words
 
         Returns:
-            Dict with 'summary', 'original_length', and 'summary_length'
+            Dict with 'summary' (str), 'original_length' (int), and 'summary_length' (int)
 
         Raises:
             ValueError: If text is empty or format is invalid

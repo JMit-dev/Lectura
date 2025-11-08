@@ -74,12 +74,18 @@ class Transcriber:
             logger.info(f"Transcribing audio file (language: {language})...")
 
             with open(temp_file_path, "rb") as audio:
-                response = self.client.audio.transcriptions.create(
-                    model=self.whisper_model,
-                    file=audio,
-                    language=language if language != "auto" else None,
-                    response_format="json",
-                )
+                # Build transcription parameters
+                transcribe_params: Dict[str, Any] = {
+                    "model": self.whisper_model,
+                    "file": audio,
+                    "response_format": "json",
+                }
+
+                # Only add language if not auto-detect
+                if language and language != "auto":
+                    transcribe_params["language"] = language
+
+                response = self.client.audio.transcriptions.create(**transcribe_params)
 
             transcript = response.text
             logger.info(
@@ -144,12 +150,18 @@ class Transcriber:
             logger.info(f"Transcribing audio file: {file_path} (language: {language})")
 
             with open(file_path, "rb") as audio:
-                response = self.client.audio.transcriptions.create(
-                    model=self.whisper_model,
-                    file=audio,
-                    language=language if language != "auto" else None,
-                    response_format="json",
-                )
+                # Build transcription parameters
+                transcribe_params: Dict[str, Any] = {
+                    "model": self.whisper_model,
+                    "file": audio,
+                    "response_format": "json",
+                }
+
+                # Only add language if not auto-detect
+                if language and language != "auto":
+                    transcribe_params["language"] = language
+
+                response = self.client.audio.transcriptions.create(**transcribe_params)
 
             transcript = response.text
             logger.info(

@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 # Try to import pydub, but make it optional
 try:
-    from pydub import AudioSegment
+    from pydub import AudioSegment  # type: ignore[import-untyped]
 
     PYDUB_AVAILABLE = True
 except (ImportError, ModuleNotFoundError):
