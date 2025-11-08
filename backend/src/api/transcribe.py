@@ -45,9 +45,14 @@ async def transcribe_audio(
                 detail=f"File too large. Max size: {settings.max_file_size} bytes",
             )
 
-        # Validate file type
-        if file.content_type and not file.content_type.startswith("audio/"):
-            raise HTTPException(status_code=400, detail=f"Invalid file type: {file.content_type}")
+        # Validate file type (accept both audio and video)
+        if file.content_type and not (
+            file.content_type.startswith("audio/") or file.content_type.startswith("video/")
+        ):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid file type: {file.content_type}. Must be audio or video file.",
+            )
 
         logger.info(
             f"Transcribing audio file: {file.filename} "

@@ -11,6 +11,9 @@ class Settings(BaseSettings):
     openrouter_base_url: str = "https://openrouter.ai/api/v1"
     gemini_model: str = "google/gemini-flash-1.5"
 
+    # Google Gemini API Configuration (for audio transcription)
+    gemini_api_key: str = ""  # Loaded from environment
+
     # App Configuration
     environment: str = "development"
     log_level: str = "INFO"
