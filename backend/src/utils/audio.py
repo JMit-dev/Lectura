@@ -350,7 +350,7 @@ def split_audio_into_chunks(
             chunk_size_mb = os.path.getsize(chunk_path) / (1024 * 1024)
             logger.info(
                 f"Created chunk {chunk_num}: {chunk_path} "
-                f"({chunk_size_mb:.2f}MB, {len(chunk)/1000:.1f}s)"
+                f"({chunk_size_mb:.2f}MB, {len(chunk) / 1000:.1f}s)"
             )
 
             chunks.append(chunk_path)

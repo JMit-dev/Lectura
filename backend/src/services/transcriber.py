@@ -235,7 +235,7 @@ class Transcriber:
             total_tokens = 0
 
             for i, chunk_file in enumerate(files_to_transcribe):
-                logger.info(f"Transcribing chunk {i+1}/{len(files_to_transcribe)}: {chunk_file}")
+                logger.info(f"Transcribing chunk {i + 1}/{len(files_to_transcribe)}: {chunk_file}")
 
                 # Get duration
                 try:
@@ -270,7 +270,7 @@ class Transcriber:
                 chunk_tokens = int(duration * 100)
                 total_tokens += chunk_tokens
 
-                logger.info(f"Chunk {i+1} complete: {len(transcript)} characters, {duration:.2f}s")
+                logger.info(f"Chunk {i + 1} complete: {len(transcript)} chars, {duration:.2f}s")
 
             # Combine all transcripts
             combined_transcript = " ".join(all_transcripts)

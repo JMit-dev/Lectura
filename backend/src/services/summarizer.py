@@ -85,7 +85,7 @@ class Summarizer:
 
             logger.info(
                 f"Summary generated: {original_length} words -> {summary_length} words "
-                f"({summary_length/original_length*100:.1f}% of original)"
+                f"({summary_length / original_length * 100:.1f}% of original)"
             )
 
             return {
