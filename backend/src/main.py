@@ -5,7 +5,7 @@ from typing import Dict
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.api import health
+from src.api import health, transcribe
 
 app = FastAPI(
     title="Lectura API", description="AI-powered lecture notes generator", version="0.1.0"
@@ -22,6 +22,7 @@ app.add_middleware(
 
 # Include routers
 app.include_router(health.router, prefix="/api", tags=["health"])
+app.include_router(transcribe.router, prefix="/api", tags=["transcription"])
 
 
 @app.get("/")
