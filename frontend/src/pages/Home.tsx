@@ -46,10 +46,23 @@ const Home = () => {
     }
   }
 
-  const handleGenerateSummary = () => runSummarize(summaryFormat)
+  const handleGenerateSummary = async () => {
+    if (!transcriptText) return
+    // Generate BOTH formats in parallel so switching tabs is instant
+    try {
+      await Promise.all([
+        summarize.summarize({ text: transcriptText, format: 'paragraph' }),
+        summarize.summarize({ text: transcriptText, format: 'bullet_points' }),
+      ])
+    } catch {
+      // handled via hook
+    }
+  }
 
   const handleFormatChange = (format: 'paragraph' | 'bullet_points') => {
-    if (format === summaryFormat && summarize.data?.summary) return
+    setSummaryFormat(format)
+    // Both formats should already be cached from handleGenerateSummary
+    // The hook will return instantly if cached, so safe to call
     void runSummarize(format)
   }
 
