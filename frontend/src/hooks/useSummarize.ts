@@ -18,13 +18,24 @@ export const useSummarize = () => {
   const [data, setData] = useState<SummarizeResponse | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [cache, setCache] = useState<Map<string, SummarizeResponse>>(new Map())
 
   const summarize = useCallback(async (payload: SummarizeRequest) => {
+    // Check cache first
+    const cacheKey = `${payload.text.substring(0, 100)}-${payload.format}`
+    const cached = cache.get(cacheKey)
+    if (cached) {
+      setData(cached)
+      return cached
+    }
+
     setIsLoading(true)
     setError(null)
     try {
       const response = await summarizeText(payload)
       setData(response)
+      // Cache the response
+      setCache((prev) => new Map(prev).set(cacheKey, response))
       return response
     } catch (err) {
       const message = parseError(err)
@@ -33,7 +44,7 @@ export const useSummarize = () => {
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [cache])
 
   const reset = () => {
     setData(null)
