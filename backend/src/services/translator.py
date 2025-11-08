@@ -122,7 +122,7 @@ class Translator:
                 preserve_marker_instruction = ""
                 if "[[" in text and "]]" in text:
                     preserve_marker_instruction = (
-                        " Keep any tokens surrounded by double square brackets exactly as they appear."
+                        " Keep tokens inside double square brackets exactly as they appear."
                     )
 
                 prompt = (

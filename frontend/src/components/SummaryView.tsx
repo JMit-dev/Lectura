@@ -74,7 +74,9 @@ export const SummaryView = ({
 
     document.body.appendChild(container)
 
-    await (html2pdf() as any)
+    const pdf = html2pdf()
+
+    await pdf
       .set({
         margin: [0.5, 0.75],
         filename: `summary-${currentLang}.pdf`,
@@ -141,7 +143,7 @@ export const SummaryView = ({
     if (bulletMatch) {
       return bulletMatch[2].trim()
     }
-    const numberedMatch = text.match(/^\s*\d+[\).\s]+(.*)/)
+    const numberedMatch = text.match(/^\s*\d+[.)\s]+(.*)/)
     if (numberedMatch) {
       return numberedMatch[1].trim()
     }

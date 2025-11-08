@@ -169,12 +169,12 @@ D: {difficulty}
 (separate each flashcard with a blank line)
 
 Rules:
-- Only use meaningful lecture content. Ignore greetings, jokes, small talk, or administrative reminders (due dates, quizzes, attendance).
-- Surface the most important concepts, processes, formulas, cause/effect chains, and comparisons from the lesson.
-- Craft questions that require understanding, not trivia or yes/no answers.
-- Keep answers concise but complete—reference equations, definitions, or multi-step reasoning when needed.
-- Vary question styles (definition, application, why/how, scenario-based) while keeping them unambiguous.
-- Ensure every flashcard is unique, information-rich, and helpful for studying core material.
+- Pull only meaningful lecture content. Ignore greetings, jokes, small talk, or admin notes.
+- Surface core concepts, key processes, formulas, and cause/effect chains from the lesson.
+- Craft questions that require understanding (not trivia or yes/no answers).
+- Keep answers concise but complete—reference equations, definitions, or multi-step reasoning.
+- Vary question styles (definition, application, why/how, scenario-based) while staying clear.
+- Ensure every flashcard is unique, information-rich, and essential for the lesson.
 
 Transcript:
 {text}
