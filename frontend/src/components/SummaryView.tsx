@@ -117,7 +117,7 @@ export const SummaryView = ({
         </div>
       </div>
 
-      <article className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+      <article className="max-h-96 overflow-y-auto rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
         {format === 'bullet_points' ? (
           <ul className="list-inside list-disc space-y-2 text-gray-800">
             {summary.split('\n').map((item, idx) => (

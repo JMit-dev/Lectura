@@ -81,7 +81,7 @@ export const TranscriptView = ({ transcript = '', isLoading = false }: Transcrip
         </button>
       </div>
 
-      <article className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+      <article className="max-h-96 overflow-y-auto rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
         <p className="whitespace-pre-wrap text-left leading-relaxed text-gray-800">{transcript}</p>
       </article>
     </div>
