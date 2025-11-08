@@ -20,7 +20,6 @@ const Home = () => {
 
   const [summaryFormat, setSummaryFormat] = useState<'paragraph' | 'bullet_points'>('paragraph')
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>(['en'])
-  const [flashcardCount, setFlashcardCount] = useState(10)
   const [flashcardDifficulty, setFlashcardDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium')
 
   // Separate translation states for summary and flashcards
@@ -101,7 +100,6 @@ const Home = () => {
     try {
       const result = await flashcards.generateFlashcards({
         text: transcriptText,
-        count: flashcardCount,
         difficulty: flashcardDifficulty,
       })
 
@@ -223,7 +221,7 @@ const Home = () => {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">Flashcards</h3>
-                <p className="text-sm text-gray-500">Set count & difficulty</p>
+                <p className="text-sm text-gray-500">Generate flashcards from the entire transcript</p>
               </div>
               <button
                 type="button"
@@ -235,34 +233,18 @@ const Home = () => {
               </button>
             </div>
 
-            <div className="flex items-center gap-4">
-              <label className="flex-1 text-sm font-medium text-gray-700">
-                Number of cards
-                <input
-                  type="number"
-                  min={5}
-                  max={30}
-                  step={1}
-                  value={flashcardCount}
-                  onChange={(event) => setFlashcardCount(Number(event.target.value))}
-                  className="mt-2 block w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
-                  placeholder="10"
-                />
-              </label>
-
-              <label className="flex-1 text-sm font-medium text-gray-700">
-                Difficulty
-                <select
-                  value={flashcardDifficulty}
-                  onChange={(event) => setFlashcardDifficulty(event.target.value as 'easy' | 'medium' | 'hard')}
-                  className="mt-2 block w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
-                >
-                  <option value="easy">Easy</option>
-                  <option value="medium">Medium</option>
-                  <option value="hard">Hard</option>
-                </select>
-              </label>
-            </div>
+            <label className="block text-sm font-medium text-gray-700">
+              Difficulty
+              <select
+                value={flashcardDifficulty}
+                onChange={(event) => setFlashcardDifficulty(event.target.value as 'easy' | 'medium' | 'hard')}
+                className="mt-2 block w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+              >
+                <option value="easy">Easy</option>
+                <option value="medium">Medium</option>
+                <option value="hard">Hard</option>
+              </select>
+            </label>
 
             {flashcards.error && <ErrorMessage message={flashcards.error} />}
           </div>

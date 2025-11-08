@@ -31,8 +31,11 @@ export const SummaryView = ({
   const charCount = useMemo(() => displayText?.length ?? 0, [displayText])
 
   const availableLanguages = useMemo(() => {
-    const langs = [{ code: 'en', label: 'English (Original)' }]
+    const langs = [{ code: 'en', label: 'English' }]
     selectedLanguages.forEach((code) => {
+      // Skip English since it's already added as the first option
+      if (code === 'en') return
+
       const lang = supportedLanguages.find((l) => l.code === code)
       if (lang && translations[code]) {
         langs.push(lang)

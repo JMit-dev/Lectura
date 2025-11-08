@@ -33,7 +33,7 @@ class FlashcardRequest(BaseModel):
     """Request model for flashcard generation"""
 
     text: str
-    count: int = Field(default=10, ge=1, le=50)
+    count: Optional[int] = Field(default=None, ge=1, le=50)
     difficulty: str = Field(default="medium", pattern="^(easy|medium|hard)$")
 
 

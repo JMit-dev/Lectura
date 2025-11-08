@@ -27,14 +27,15 @@ class FlashcardGenerator:
         logger.info("Initialized FlashcardGenerator with direct Gemini API + TOON format")
 
     def generate_flashcards(
-        self, text: str, count: int = 10, difficulty: str = "medium", use_toon: bool = True
+        self, text: str, count: int | None = None, difficulty: str = "medium", use_toon: bool = True
     ) -> Dict[str, Any]:
         """
         Generate flashcards from text using Gemini.
 
         Args:
             text: Source text to generate flashcards from
-            count: Number of flashcards to generate (1-50)
+            count: Number of flashcards to generate (1-50).
+                   If None, auto-calculated based on text length.
             difficulty: Difficulty level ('easy', 'medium', 'hard')
             use_toon: Use TOON format for 40-50% token savings (default: True)
 
@@ -47,6 +48,12 @@ class FlashcardGenerator:
         """
         if not text or not text.strip():
             raise ValueError("Text cannot be empty")
+
+        # Auto-calculate count if not provided (1 flashcard per ~100 words)
+        if count is None:
+            word_count = len(text.split())
+            count = max(5, min(50, word_count // 100))
+            logger.info(f"Auto-calculated flashcard count: {count} (based on {word_count} words)")
 
         if count < 1 or count > 50:
             raise ValueError(f"Count must be between 1 and 50, got {count}")

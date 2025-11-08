@@ -24,7 +24,7 @@ export interface Flashcard {
 
 export interface FlashcardRequest {
   text: string
-  count?: number
+  count?: number | null
   difficulty?: 'easy' | 'medium' | 'hard'
 }
 
