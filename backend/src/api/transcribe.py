@@ -1,6 +1,7 @@
 """Transcription API endpoint"""
 
 import logging
+from typing import Any, Dict
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 
@@ -67,6 +68,8 @@ async def transcribe_audio(
         )
 
         # Handle text files directly
+        result: Dict[str, Any]
+
         if file.content_type and (
             file.content_type.startswith("text/") or file.content_type == "application/pdf"
         ):
@@ -101,13 +104,18 @@ async def transcribe_audio(
             transcriber = Transcriber()
             result = await transcriber.transcribe(file, language=language)
 
-        logger.info(f"Processing successful: {len(result['transcript'])} characters")
+        transcript_value = result.get("transcript", "")
+        transcript_text = (
+            transcript_value if isinstance(transcript_value, str) else str(transcript_value)
+        )
+
+        logger.info(f"Processing successful: {len(transcript_text)} characters")
 
         return TranscribeResponse(
-            transcript=result["transcript"],
-            duration=result["duration"],
-            language=result["language"],
-            tokens_used=result["tokens_used"],
+            transcript=transcript_text,
+            duration=float(result.get("duration", 0.0)),
+            language=str(result.get("language", language)),
+            tokens_used=int(result.get("tokens_used", 0)),
         )
 
     except ValueError as e:
