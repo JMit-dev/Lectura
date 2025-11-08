@@ -6,7 +6,7 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     """Application settings"""
 
-    gemini_api_key: str
+    gemini_api_key: str = ""  # Loaded from environment
     environment: str = "development"
     log_level: str = "INFO"
     cors_origins: str = "http://localhost:5173"
@@ -17,4 +17,4 @@ class Settings(BaseSettings):
         case_sensitive = False
 
 
-settings = Settings()
+settings = Settings()  # type: ignore[call-arg]

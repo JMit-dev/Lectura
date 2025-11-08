@@ -1,5 +1,7 @@
 """FastAPI application entry point"""
 
+from typing import Dict
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -23,6 +25,6 @@ app.include_router(health.router, prefix="/api", tags=["health"])
 
 
 @app.get("/")
-async def root():
+async def root() -> Dict[str, str]:
     """Root endpoint"""
     return {"message": "Lectura API", "version": "0.1.0", "docs": "/docs"}
