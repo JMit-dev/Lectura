@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
 import { AxiosError } from 'axios'
-import { api } from '../lib/api'
+import { transcribeAudio } from '../lib/api'
 import type { TranscribeResponse } from '../types/api'
 
 const parseError = (error: unknown) => {
@@ -26,19 +26,13 @@ export const useTranscribe = () => {
     setUploadProgress(0)
 
     try {
-      const formData = new FormData()
-      formData.append('file', file)
-
-      const response = await api.post<TranscribeResponse>('/api/transcribe', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-        onUploadProgress: (evt) => {
-          if (!evt.total) return
-          setUploadProgress(Math.round((evt.loaded / evt.total) * 100))
-        },
+      const response = await transcribeAudio(file, (evt) => {
+        if (!evt.total) return
+        setUploadProgress(Math.round((evt.loaded / evt.total) * 100))
       })
 
-      setData(response.data)
-      return response.data
+      setData(response)
+      return response
     } catch (err) {
       const message = parseError(err)
       setError(message)

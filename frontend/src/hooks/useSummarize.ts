@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
 import { AxiosError } from 'axios'
-import { api } from '../lib/api'
+import { summarizeText } from '../lib/api'
 import type { SummarizeRequest, SummarizeResponse } from '../types/api'
 
 const parseError = (error: unknown) => {
@@ -23,9 +23,9 @@ export const useSummarize = () => {
     setIsLoading(true)
     setError(null)
     try {
-      const response = await api.post<SummarizeResponse>('/api/summarize', payload)
-      setData(response.data)
-      return response.data
+      const response = await summarizeText(payload)
+      setData(response)
+      return response
     } catch (err) {
       const message = parseError(err)
       setError(message)
