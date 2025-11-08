@@ -10,8 +10,26 @@ interface AudioUploaderProps {
   maxFileSizeMb?: number
 }
 
-const defaultAcceptedTypes = ['audio/mpeg', 'audio/wav', 'audio/mp4', 'audio/x-m4a']
-const defaultMaxSizeMb = 50
+const defaultAcceptedTypes = [
+  // Audio formats
+  'audio/mpeg',
+  'audio/wav',
+  'audio/mp4',
+  'audio/x-m4a',
+  'audio/aac',
+  'audio/ogg',
+  'audio/flac',
+  // Video formats
+  'video/mp4',
+  'video/webm',
+  'video/x-msvideo',
+  'video/quicktime',
+  'video/x-matroska',
+  // Text formats
+  'text/plain',
+  'application/pdf',
+]
+const defaultMaxSizeMb = 200
 
 const readableFileSize = (bytes: number) => {
   if (bytes === 0) return '0 B'
@@ -131,10 +149,10 @@ export const AudioUploader = ({
         />
 
         <UploadCloud className="mb-4 h-12 w-12 text-indigo-500" />
-        <p className="text-lg font-semibold text-gray-900">Drag & drop audio here</p>
+        <p className="text-lg font-semibold text-gray-900">Drag & drop your file here</p>
         <p className="text-sm text-gray-500">or click to browse files</p>
         <p className="mt-4 text-xs text-gray-400">
-          Supported: mp3, wav, m4a • Max size: {maxFileSizeMb}MB
+          Supported: Audio (mp3, wav, m4a), Video (mp4, webm, mov), Text (txt, pdf) • Max size: {maxFileSizeMb}MB
         </p>
 
         {isUploading && (
@@ -177,7 +195,7 @@ export const AudioUploader = ({
             </button>
           </div>
 
-          {previewUrl && (
+          {previewUrl && selectedFile?.type.startsWith('audio/') && (
             <audio
               controls
               src={previewUrl}
@@ -185,6 +203,15 @@ export const AudioUploader = ({
             >
               Your browser does not support the audio element.
             </audio>
+          )}
+          {previewUrl && selectedFile?.type.startsWith('video/') && (
+            <video
+              controls
+              src={previewUrl}
+              className="mt-4 w-full rounded-xl bg-gray-100 p-2"
+            >
+              Your browser does not support the video element.
+            </video>
           )}
         </div>
       )}

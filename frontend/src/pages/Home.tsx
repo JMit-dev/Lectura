@@ -94,7 +94,7 @@ const Home = () => {
             Turn lectures into transcripts, summaries, and flashcards
           </h1>
           <p className="mt-4 text-lg text-gray-600">
-            Upload audio once and let Lectura handle the rest — transcripts, summaries, flashcards, and translations.
+            Upload audio, video, or text and let Lectura handle the rest — transcripts, summaries, flashcards, and translations.
           </p>
         </header>
 
@@ -109,7 +109,7 @@ const Home = () => {
           <div className="space-y-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
             <h3 className="text-lg font-semibold text-gray-900">Workflow</h3>
             <ol className="space-y-3 text-sm text-gray-600">
-              <li>1. Upload audio (mp3, wav, m4a)</li>
+              <li>1. Upload audio, video, or text file</li>
               <li>2. Generate transcript automatically</li>
               <li>3. Summarize, create flashcards, or translate</li>
               <li>4. Share or download results</li>
@@ -154,25 +154,25 @@ const Home = () => {
 
             <div className="flex items-center gap-4">
               <label className="flex-1 text-sm font-medium text-gray-700">
-                Count
+                Number of cards
                 <input
-                  type="range"
+                  type="number"
                   min={5}
-                  max={20}
+                  max={30}
                   step={1}
                   value={flashcardCount}
                   onChange={(event) => setFlashcardCount(Number(event.target.value))}
-                  className="mt-2 w-full"
+                  className="mt-2 block w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                  placeholder="10"
                 />
-                <span className="text-xs text-gray-500">{flashcardCount} cards</span>
               </label>
 
-              <label className="text-sm font-medium text-gray-700">
+              <label className="flex-1 text-sm font-medium text-gray-700">
                 Difficulty
                 <select
                   value={flashcardDifficulty}
                   onChange={(event) => setFlashcardDifficulty(event.target.value as 'easy' | 'medium' | 'hard')}
-                  className="mt-2 block rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                  className="mt-2 block w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
                 >
                   <option value="easy">Easy</option>
                   <option value="medium">Medium</option>
