@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
 import { AxiosError } from 'axios'
-import { api } from '../lib/api'
+import { generateFlashcards as fetchFlashcards } from '../lib/api'
 import type { FlashcardRequest, FlashcardResponse } from '../types/api'
 
 const parseError = (error: unknown) => {
@@ -23,9 +23,9 @@ export const useFlashcards = () => {
     setIsLoading(true)
     setError(null)
     try {
-      const response = await api.post<FlashcardResponse>('/api/flashcards', payload)
-      setData(response.data)
-      return response.data
+      const response = await fetchFlashcards(payload)
+      setData(response)
+      return response
     } catch (err) {
       const message = parseError(err)
       setError(message)

@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
 import { AxiosError } from 'axios'
-import { api } from '../lib/api'
+import { translateText } from '../lib/api'
 import type { TranslateRequest, TranslateResponse } from '../types/api'
 
 const parseError = (error: unknown) => {
@@ -23,9 +23,9 @@ export const useTranslate = () => {
     setIsLoading(true)
     setError(null)
     try {
-      const response = await api.post<TranslateResponse>('/api/translate', payload)
-      setData(response.data)
-      return response.data
+      const response = await translateText(payload)
+      setData(response)
+      return response
     } catch (err) {
       const message = parseError(err)
       setError(message)
