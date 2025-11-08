@@ -41,6 +41,15 @@ const Home = () => {
     }
   }
 
+  const handleClear = () => {
+    transcribe.reset()
+    summarize.reset()
+    flashcards.reset()
+    translate.reset()
+    setSummaryTranslations({})
+    setFlashcardTranslations({})
+  }
+
   const runSummarize = async (format: 'paragraph' | 'bullet_points') => {
     if (!transcriptText) return
     setSummaryFormat(format)
@@ -182,6 +191,7 @@ const Home = () => {
         <section className="grid gap-6 lg:grid-cols-[2fr_1fr]">
           <AudioUploader
             onFileSelected={handleFileUpload}
+            onClear={handleClear}
             isUploading={transcribe.isLoading}
             uploadProgress={transcribe.uploadProgress}
             error={transcribe.error}
@@ -283,7 +293,6 @@ const Home = () => {
                   format={summaryFormat}
                   isLoading={summarize.isLoading}
                   onFormatChange={handleFormatChange}
-                  onRegenerate={handleGenerateSummary}
                   translations={summaryTranslations}
                   selectedLanguages={selectedLanguages}
                 />

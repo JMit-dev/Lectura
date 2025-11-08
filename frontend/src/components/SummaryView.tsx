@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Check, Copy, Download, RefreshCw, Languages } from 'lucide-react'
+import { Check, Copy, Download, Languages } from 'lucide-react'
 import { supportedLanguages } from '../constants/languages'
 import LoadingSpinner from './LoadingSpinner'
 
@@ -10,7 +10,6 @@ interface SummaryViewProps {
   format: SummaryFormat
   isLoading?: boolean
   onFormatChange?: (format: SummaryFormat) => void
-  onRegenerate?: () => void
   translations?: Record<string, string>
   selectedLanguages?: string[]
 }
@@ -20,7 +19,6 @@ export const SummaryView = ({
   format,
   isLoading = false,
   onFormatChange,
-  onRegenerate,
   translations = {},
   selectedLanguages = [],
 }: SummaryViewProps) => {
@@ -116,15 +114,6 @@ export const SummaryView = ({
         <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
           {charCount.toLocaleString()} characters
         </span>
-
-        <button
-          type="button"
-          onClick={onRegenerate}
-          className="inline-flex items-center space-x-2 rounded-full border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition hover:border-transparent hover:bg-gray-100"
-        >
-          <RefreshCw className="h-4 w-4" />
-          <span>Regenerate</span>
-        </button>
 
         <div className="flex items-center gap-2">
           <button

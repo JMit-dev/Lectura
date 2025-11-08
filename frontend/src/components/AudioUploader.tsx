@@ -3,6 +3,7 @@ import { UploadCloud, XCircle } from 'lucide-react'
 
 interface AudioUploaderProps {
   onFileSelected: (file: File) => void
+  onClear?: () => void
   isUploading?: boolean
   uploadProgress?: number
   error?: string | null
@@ -42,6 +43,7 @@ const readableFileSize = (bytes: number) => {
 
 export const AudioUploader = ({
   onFileSelected,
+  onClear,
   isUploading = false,
   uploadProgress,
   error,
@@ -72,6 +74,7 @@ export const AudioUploader = ({
     setSelectedFile(null)
     setPreviewUrl(null)
     setLocalError(null)
+    onClear?.()
   }
 
   const validateFile = (file?: File) => {
