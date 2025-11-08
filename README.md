@@ -127,20 +127,34 @@ Once the backend is running, visit http://localhost:8000/docs for interactive AP
 ```
 lectura/
 ├── backend/          # Python FastAPI backend
-│   ├── src/
-│   │   ├── api/      # API routes
-│   │   ├── services/ # Business logic
-│   │   ├── models/   # Data models
-│   │   └── utils/    # Utilities
-│   └── tests/        # Tests
-├── frontend/         # React frontend
-│   └── src/
-│       ├── components/
-│       ├── pages/
-│       ├── hooks/
-│       └── lib/
-└── docs/            # Documentation
+│   ├── src/          # Source code
+│   ├── tests/        # Tests
+│   └── README.md     # 👈 Backend setup guide
+│
+├── frontend/         # React TypeScript frontend
+│   ├── src/          # Source code
+│   └── README.md     # 👈 Frontend setup guide
+│
+├── docs/             # Documentation
+│   ├── API.md        # API reference
+│   ├── ARCHITECTURE.md  # System design
+│   └── README.md     # 👈 Documentation index
+│
+├── scripts/          # Automation scripts
+│   ├── setup.sh      # Initial setup
+│   ├── dev.sh        # Development servers
+│   └── README.md     # 👈 Scripts guide
+│
+├── .github/          # CI/CD workflows
+└── CLAUDE.md         # Hackathon technical plan
 ```
+
+**📖 Detailed Documentation:**
+- [Backend README](./backend/README.md) - Backend setup, API development, testing
+- [Frontend README](./frontend/README.md) - Frontend setup, components, hooks
+- [Documentation Guide](./docs/README.md) - Documentation standards and index
+- [Scripts Guide](./scripts/README.md) - Automation tools and utilities
+- [Hackathon Plan](./CLAUDE.md) - Complete technical design and timeline
 
 ## 🤝 Contributing
 
@@ -157,6 +171,67 @@ MIT License - see LICENSE file for details
 ## 👥 Team
 
 Built for [Hackathon Name] by Team Lectura
+
+## 🤖 Working with AI Agents
+
+This project is fully documented for AI coding assistants (Claude, GPT, Cursor, etc.):
+
+### For AI Agents to Understand the Project:
+
+1. **Start here:** Read this `README.md` for project overview
+2. **Backend work:** Read [`backend/README.md`](./backend/README.md) for:
+   - File structure and what goes where
+   - API endpoints to implement
+   - Service layer patterns
+   - Testing requirements
+3. **Frontend work:** Read [`frontend/README.md`](./frontend/README.md) for:
+   - Component structure
+   - React hooks to create
+   - API integration patterns
+   - Styling with Tailwind
+4. **Documentation:** Check [`docs/README.md`](./docs/README.md) for:
+   - API specifications
+   - Architecture decisions
+   - Code documentation standards
+5. **Automation:** See [`scripts/README.md`](./scripts/README.md) for:
+   - Available scripts
+   - How to run tests
+   - Development workflows
+
+### AI Agent Quick Commands:
+
+```bash
+# Setup everything
+./scripts/setup.sh
+
+# Start development
+./scripts/dev.sh
+
+# Run tests
+cd backend && pytest
+cd frontend && npm test
+
+# Check code quality
+cd backend && black src/ && flake8 src/
+cd frontend && npm run lint
+```
+
+### Context for AI Assistants:
+
+Each directory has a README with:
+- ✅ Clear file structure
+- ✅ What each file/directory is for
+- ✅ TODO markers for unfinished work
+- ✅ Code examples and patterns
+- ✅ Testing instructions
+- ✅ Priority order of tasks
+
+This makes it easy for AI agents to:
+- Understand the codebase quickly
+- Know where to add new code
+- Follow existing patterns
+- Write appropriate tests
+- Maintain code quality
 
 ## 🙏 Acknowledgments
 
