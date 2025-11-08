@@ -6,9 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.api import health
 
 app = FastAPI(
-    title="Lectura API",
-    description="AI-powered lecture notes generator",
-    version="0.1.0"
+    title="Lectura API", description="AI-powered lecture notes generator", version="0.1.0"
 )
 
 # CORS configuration
@@ -27,8 +25,4 @@ app.include_router(health.router, prefix="/api", tags=["health"])
 @app.get("/")
 async def root():
     """Root endpoint"""
-    return {
-        "message": "Lectura API",
-        "version": "0.1.0",
-        "docs": "/docs"
-    }
+    return {"message": "Lectura API", "version": "0.1.0", "docs": "/docs"}

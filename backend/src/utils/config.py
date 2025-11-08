@@ -5,6 +5,7 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     """Application settings"""
+
     gemini_api_key: str
     environment: str = "development"
     log_level: str = "INFO"

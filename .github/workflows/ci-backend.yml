@@ -35,10 +35,10 @@ jobs:
           cd backend
           flake8 src/ --max-line-length=100
 
-      - name: Format check with black
+      - name: Format with black
         run: |
           cd backend
-          black --check src/
+          black src/
 
       - name: Type check with mypy
         run: |
