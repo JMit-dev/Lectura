@@ -1,15 +1,27 @@
 """Audio transcription service using Google Gemini"""
 
 import logging
+import os
 import tempfile
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-import google.generativeai as genai
-from fastapi import UploadFile
+# Disable progress bars before importing genai
+os.environ["TQDM_DISABLE"] = "1"
 
-from src.utils.audio import get_audio_duration, prepare_audio_for_transcription, validate_audio_file
-from src.utils.config import settings
+import google.generativeai as genai  # noqa: E402
+from fastapi import UploadFile  # noqa: E402
+
+from src.utils.audio import (  # noqa: E402
+    get_audio_duration,
+    prepare_audio_for_transcription,
+    validate_audio_file,
+)
+from src.utils.config import settings  # noqa: E402
+
+# Disable all google.generativeai logging
+logging.getLogger("google.generativeai").setLevel(logging.CRITICAL)
+logging.getLogger("google.ai.generativelanguage").setLevel(logging.CRITICAL)
 
 logger = logging.getLogger(__name__)
 
