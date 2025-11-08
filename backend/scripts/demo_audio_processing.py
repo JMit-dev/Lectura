@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test script for audio/video processing (without API calls).
+Demo script for audio/video processing (without API calls).
 
 Tests:
 - Video to audio extraction
@@ -9,7 +9,7 @@ Tests:
 - Compression
 
 Usage:
-    python test_audio_processing.py --test-duration 600
+    python scripts/demo_audio_processing.py --test-duration 600
 """
 
 import argparse
@@ -17,8 +17,8 @@ import logging
 import sys
 from pathlib import Path
 
-# Add src to path
-sys.path.insert(0, str(Path(__file__).parent))
+# Add backend to path
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.utils.audio import (  # noqa: F401, E402
     extract_audio_from_video,

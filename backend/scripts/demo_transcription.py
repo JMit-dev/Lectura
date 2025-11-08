@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """
-Test script for transcribing audio/video files with chunking support.
+Demo script for transcribing audio/video files with chunking support.
 
 Usage:
-    python test_transcription.py [--test-duration SECONDS]
+    python scripts/demo_transcription.py [--test-duration SECONDS]
 
 Examples:
     # Test with 10 minutes (600 seconds) of a video
-    python test_transcription.py --test-duration 600
+    python scripts/demo_transcription.py --test-duration 600
 
     # Transcribe full file
-    python test_transcription.py
+    python scripts/demo_transcription.py
 """
 
 import argparse
