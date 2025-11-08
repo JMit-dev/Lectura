@@ -1,24 +1,11 @@
 import { useMemo, useState } from 'react'
 import { Search } from 'lucide-react'
+import { supportedLanguages } from '../constants/languages'
 
 interface LanguageSelectorProps {
   selected: string[]
   onChange: (languages: string[]) => void
 }
-
-const supportedLanguages = [
-  { code: 'en', label: 'English' },
-  { code: 'es', label: 'Spanish' },
-  { code: 'fr', label: 'French' },
-  { code: 'de', label: 'German' },
-  { code: 'pt', label: 'Portuguese' },
-  { code: 'it', label: 'Italian' },
-  { code: 'ja', label: 'Japanese' },
-  { code: 'ko', label: 'Korean' },
-  { code: 'zh', label: 'Chinese (Mandarin)' },
-  { code: 'ar', label: 'Arabic' },
-  { code: 'hi', label: 'Hindi' },
-]
 
 export const LanguageSelector = ({ selected, onChange }: LanguageSelectorProps) => {
   const [query, setQuery] = useState('')
@@ -32,6 +19,9 @@ export const LanguageSelector = ({ selected, onChange }: LanguageSelectorProps) 
   }, [query])
 
   const toggleLanguage = (code: string) => {
+    // English must always be selected
+    if (code === 'en') return
+
     if (selected.includes(code)) {
       onChange(selected.filter((lang) => lang !== code))
     } else {
@@ -42,7 +32,7 @@ export const LanguageSelector = ({ selected, onChange }: LanguageSelectorProps) 
   return (
     <div className="space-y-4 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
       <label className="block text-sm font-semibold text-gray-700">
-        Select target languages
+        Select languages for translation
         <div className="mt-2 flex items-center rounded-xl border border-gray-200 px-3">
           <Search className="h-4 w-4 text-gray-400" />
           <input
@@ -55,17 +45,19 @@ export const LanguageSelector = ({ selected, onChange }: LanguageSelectorProps) 
         </div>
       </label>
 
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid max-h-80 gap-3 overflow-y-auto sm:grid-cols-2">
         {filteredLanguages.map((language) => {
           const isSelected = selected.includes(language.code)
+          const isEnglish = language.code === 'en'
           return (
             <button
               key={language.code}
               type="button"
               onClick={() => toggleLanguage(language.code)}
+              disabled={isEnglish}
               className={`flex items-center justify-between rounded-xl border px-4 py-3 text-left transition ${
                 isSelected ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-gray-200 text-gray-700'
-              }`}
+              } ${isEnglish ? 'cursor-not-allowed opacity-75' : 'cursor-pointer'}`}
             >
               <div>
                 <p className="text-sm font-semibold">{language.label}</p>

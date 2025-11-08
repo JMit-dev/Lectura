@@ -3,7 +3,6 @@ import AudioUploader from '../components/AudioUploader'
 import TranscriptView from '../components/TranscriptView'
 import SummaryView from '../components/SummaryView'
 import FlashcardsView from '../components/FlashcardsView'
-import TranslationsView from '../components/TranslationsView'
 import LanguageSelector from '../components/LanguageSelector'
 import ResultsDisplay from '../components/ResultsDisplay'
 import ErrorMessage from '../components/ErrorMessage'
@@ -11,6 +10,7 @@ import useTranscribe from '../hooks/useTranscribe'
 import useSummarize from '../hooks/useSummarize'
 import useFlashcards from '../hooks/useFlashcards'
 import useTranslate from '../hooks/useTranslate'
+import type { Flashcard } from '../types/api'
 
 const Home = () => {
   const transcribe = useTranscribe()
@@ -19,9 +19,13 @@ const Home = () => {
   const translate = useTranslate()
 
   const [summaryFormat, setSummaryFormat] = useState<'paragraph' | 'bullet_points'>('paragraph')
-  const [selectedLanguages, setSelectedLanguages] = useState<string[]>(['es', 'fr'])
+  const [selectedLanguages, setSelectedLanguages] = useState<string[]>(['en'])
   const [flashcardCount, setFlashcardCount] = useState(10)
   const [flashcardDifficulty, setFlashcardDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium')
+
+  // Separate translation states for summary and flashcards
+  const [summaryTranslations, setSummaryTranslations] = useState<Record<string, string>>({})
+  const [flashcardTranslations, setFlashcardTranslations] = useState<Record<string, Flashcard[]>>({})
 
   const transcriptText = transcribe.data?.transcript ?? ''
 
@@ -29,6 +33,8 @@ const Home = () => {
     summarize.reset()
     flashcards.reset()
     translate.reset()
+    setSummaryTranslations({})
+    setFlashcardTranslations({})
     try {
       await transcribe.transcribe(file)
     } catch {
@@ -50,10 +56,34 @@ const Home = () => {
     if (!transcriptText) return
     // Generate BOTH formats in parallel so switching tabs is instant
     try {
-      await Promise.all([
+      const [paragraphResult, bulletResult] = await Promise.all([
         summarize.summarize({ text: transcriptText, format: 'paragraph' }),
         summarize.summarize({ text: transcriptText, format: 'bullet_points' }),
       ])
+
+      // If languages are selected, also generate translations
+      if (selectedLanguages.length > 0 && paragraphResult && bulletResult) {
+        const translations: Record<string, string> = {}
+
+        // Translate the current format's summary
+        const currentSummary = summaryFormat === 'paragraph' ? paragraphResult.summary : bulletResult.summary
+
+        for (const lang of selectedLanguages) {
+          try {
+            const result = await translate.translate({
+              text: currentSummary,
+              target_languages: [lang],
+            })
+            if (result?.translations?.[lang]) {
+              translations[lang] = result.translations[lang]
+            }
+          } catch {
+            // Skip failed translations
+          }
+        }
+
+        setSummaryTranslations(translations)
+      }
     } catch {
       // handled via hook
     }
@@ -69,11 +99,51 @@ const Home = () => {
   const handleGenerateFlashcards = async () => {
     if (!transcriptText) return
     try {
-      await flashcards.generateFlashcards({
+      const result = await flashcards.generateFlashcards({
         text: transcriptText,
         count: flashcardCount,
         difficulty: flashcardDifficulty,
       })
+
+      // If languages are selected, also generate translations for flashcards
+      if (selectedLanguages.length > 0 && result?.flashcards) {
+        const translations: Record<string, Flashcard[]> = {}
+
+        for (const lang of selectedLanguages) {
+          const translatedCards = []
+
+          for (const card of result.flashcards) {
+            try {
+              // Translate question and answer together
+              const combinedText = `Question: ${card.question}\nAnswer: ${card.answer}`
+              const translateResult = await translate.translate({
+                text: combinedText,
+                target_languages: [lang],
+              })
+
+              if (translateResult?.translations?.[lang]) {
+                // Parse the translated text back into question and answer
+                const translated = translateResult.translations[lang]
+                const questionMatch = translated.match(/Question:\s*(.+?)(?:\nAnswer:|$)/s)
+                const answerMatch = translated.match(/Answer:\s*(.+?)$/s)
+
+                translatedCards.push({
+                  question: questionMatch?.[1]?.trim() || card.question,
+                  answer: answerMatch?.[1]?.trim() || card.answer,
+                  difficulty: card.difficulty,
+                })
+              }
+            } catch {
+              // If translation fails, use original
+              translatedCards.push(card)
+            }
+          }
+
+          translations[lang] = translatedCards
+        }
+
+        setFlashcardTranslations(translations)
+      }
     } catch {
       // handled via hook
     }
@@ -232,10 +302,18 @@ const Home = () => {
                   isLoading={summarize.isLoading}
                   onFormatChange={handleFormatChange}
                   onRegenerate={handleGenerateSummary}
+                  translations={summaryTranslations}
+                  selectedLanguages={selectedLanguages}
                 />
               }
-              flashcards={<FlashcardsView flashcards={flashcards.data?.flashcards} isLoading={flashcards.isLoading} />}
-              translations={<TranslationsView translations={translate.data?.translations} isLoading={translate.isLoading} />}
+              flashcards={
+                <FlashcardsView
+                  flashcards={flashcards.data?.flashcards}
+                  isLoading={flashcards.isLoading}
+                  translations={flashcardTranslations}
+                  selectedLanguages={selectedLanguages}
+                />
+              }
             />
           </div>
         )}

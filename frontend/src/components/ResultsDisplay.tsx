@@ -1,12 +1,11 @@
 import { ReactNode, useState } from 'react'
 
-export type ResultsTab = 'transcript' | 'summary' | 'flashcards' | 'translations'
+export type ResultsTab = 'transcript' | 'summary' | 'flashcards'
 
 interface ResultsDisplayProps {
   transcript: ReactNode
   summary: ReactNode
   flashcards: ReactNode
-  translations: ReactNode
   activeTab?: ResultsTab
   onTabChange?: (tab: ResultsTab) => void
 }
@@ -15,14 +14,12 @@ const tabs: { id: ResultsTab; label: string }[] = [
   { id: 'transcript', label: 'Transcript' },
   { id: 'summary', label: 'Summary' },
   { id: 'flashcards', label: 'Flashcards' },
-  { id: 'translations', label: 'Translations' },
 ]
 
 export const ResultsDisplay = ({
   transcript,
   summary,
   flashcards,
-  translations,
   activeTab,
   onTabChange,
 }: ResultsDisplayProps) => {
@@ -38,7 +35,6 @@ export const ResultsDisplay = ({
     transcript,
     summary,
     flashcards,
-    translations,
   }
 
   return (

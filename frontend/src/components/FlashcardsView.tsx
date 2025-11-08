@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ArrowLeft, ArrowRight, RefreshCw } from 'lucide-react'
+import { ArrowLeft, ArrowRight, RefreshCw, Languages } from 'lucide-react'
 import type { Flashcard } from '../types/api'
+import { supportedLanguages } from '../constants/languages'
 import LoadingSpinner from './LoadingSpinner'
 
 interface FlashcardsViewProps {
   flashcards?: Flashcard[]
   isLoading?: boolean
+  translations?: Record<string, Flashcard[]>
+  selectedLanguages?: string[]
 }
 
 const shuffle = <T,>(items: T[]) => {
@@ -17,16 +20,35 @@ const shuffle = <T,>(items: T[]) => {
   return copy
 }
 
-export const FlashcardsView = ({ flashcards = [], isLoading = false }: FlashcardsViewProps) => {
+export const FlashcardsView = ({
+  flashcards = [],
+  isLoading = false,
+  translations = {},
+  selectedLanguages = [],
+}: FlashcardsViewProps) => {
   const [orderedCards, setOrderedCards] = useState<Flashcard[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isFlipped, setIsFlipped] = useState(false)
+  const [currentLang, setCurrentLang] = useState<string>('en')
+
+  const displayCards = currentLang === 'en' ? flashcards : translations[currentLang]
+
+  const availableLanguages = useMemo(() => {
+    const langs = [{ code: 'en', label: 'English (Original)' }]
+    selectedLanguages.forEach((code) => {
+      const lang = supportedLanguages.find((l) => l.code === code)
+      if (lang && translations[code]) {
+        langs.push(lang)
+      }
+    })
+    return langs
+  }, [selectedLanguages, translations])
 
   useEffect(() => {
-    setOrderedCards(flashcards)
+    setOrderedCards(displayCards || [])
     setCurrentIndex(0)
     setIsFlipped(false)
-  }, [flashcards])
+  }, [displayCards])
 
   const nextCard = useCallback(() => {
     setIsFlipped(false)
@@ -103,6 +125,22 @@ export const FlashcardsView = ({ flashcards = [], isLoading = false }: Flashcard
         </div>
 
         <div className="flex items-center gap-3">
+          {availableLanguages.length > 1 && (
+            <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1">
+              <Languages className="h-3 w-3 text-gray-500" />
+              <select
+                value={currentLang}
+                onChange={(e) => setCurrentLang(e.target.value)}
+                className="border-0 bg-transparent text-xs font-semibold text-gray-700 focus:outline-none"
+              >
+                {availableLanguages.map((lang) => (
+                  <option key={lang.code} value={lang.code}>
+                    {lang.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <button
             type="button"
             onClick={() => setIsFlipped((prev) => !prev)}
