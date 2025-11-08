@@ -5,11 +5,24 @@ echo "======================="
 echo ""
 
 # Check Python version
-if ! command -v python3.11 &> /dev/null; then
-    echo "❌ Python 3.11 is required but not found"
+PYTHON_CMD=""
+if command -v python3.13 &> /dev/null; then
+    PYTHON_CMD="python3.13"
+    echo "✅ Python 3.13 found"
+elif command -v python3.12 &> /dev/null; then
+    PYTHON_CMD="python3.12"
+    echo "✅ Python 3.12 found"
+elif command -v python3.11 &> /dev/null; then
+    PYTHON_CMD="python3.11"
+    echo "✅ Python 3.11 found"
+elif command -v python3 &> /dev/null; then
+    PYTHON_VERSION=$(python3 --version | cut -d' ' -f2)
+    PYTHON_CMD="python3"
+    echo "✅ Python $PYTHON_VERSION found"
+else
+    echo "❌ Python 3.11+ is required but not found"
     exit 1
 fi
-echo "✅ Python 3.11 found"
 
 # Check Node.js version
 if ! command -v node &> /dev/null; then
@@ -24,7 +37,7 @@ echo "📦 Setting up backend..."
 cd backend
 
 # Create virtual environment
-python3.11 -m venv venv
+$PYTHON_CMD -m venv venv
 echo "✅ Virtual environment created"
 
 # Activate virtual environment
