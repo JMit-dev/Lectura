@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     environment: str = "development"
     log_level: str = "INFO"
     cors_origins: str = "http://localhost:5173"
-    max_file_size: int = 209715200  # 200MB
+    max_file_size: int = 524288000  # 500MB default, override with MAX_FILE_SIZE env var
 
     class Config:
         env_file = ".env"

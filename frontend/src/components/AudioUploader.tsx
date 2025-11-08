@@ -29,7 +29,7 @@ const defaultAcceptedTypes = [
   'text/plain',
   'application/pdf',
 ]
-const defaultMaxSizeMb = 200
+const defaultMaxSizeMb = 500
 
 const readableFileSize = (bytes: number) => {
   if (bytes === 0) return '0 B'
