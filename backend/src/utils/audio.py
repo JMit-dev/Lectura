@@ -5,9 +5,16 @@ import os
 from pathlib import Path
 from typing import Optional, Tuple
 
-from pydub import AudioSegment
-
 logger = logging.getLogger(__name__)
+
+# Try to import pydub, but make it optional
+try:
+    from pydub import AudioSegment
+
+    PYDUB_AVAILABLE = True
+except (ImportError, ModuleNotFoundError):
+    PYDUB_AVAILABLE = False
+    logger.warning("pydub not available - some audio features will be limited")
 
 # Supported audio formats
 SUPPORTED_FORMATS = {
@@ -67,11 +74,15 @@ def get_audio_duration(file_path: str) -> float:
         file_path: Path to audio file
 
     Returns:
-        Duration in seconds
+        Duration in seconds (0.0 if pydub not available)
 
     Raises:
         Exception: If unable to read audio file
     """
+    if not PYDUB_AVAILABLE:
+        logger.warning("pydub not available, returning 0.0 for duration")
+        return 0.0
+
     try:
         file_ext = Path(file_path).suffix.lower().lstrip(".")
         format_name = SUPPORTED_FORMATS.get(file_ext, file_ext)
@@ -99,6 +110,10 @@ def convert_audio_format(input_path: str, output_path: str, target_format: str =
     Returns:
         True if conversion successful, False otherwise
     """
+    if not PYDUB_AVAILABLE:
+        logger.error("pydub not available, cannot convert audio format")
+        return False
+
     try:
         file_ext = Path(input_path).suffix.lower().lstrip(".")
         format_name = SUPPORTED_FORMATS.get(file_ext, file_ext)
@@ -126,6 +141,10 @@ def compress_audio(input_path: str, output_path: str, bitrate: str = "64k") -> b
     Returns:
         True if compression successful, False otherwise
     """
+    if not PYDUB_AVAILABLE:
+        logger.error("pydub not available, cannot compress audio")
+        return False
+
     try:
         file_ext = Path(input_path).suffix.lower().lstrip(".")
         format_name = SUPPORTED_FORMATS.get(file_ext, file_ext)
