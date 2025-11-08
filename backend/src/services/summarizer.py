@@ -3,7 +3,9 @@
 import logging
 from typing import Any, Dict
 
-from src.services.gemini import GeminiClient
+import google.generativeai as genai
+
+from src.utils.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -12,9 +14,13 @@ class Summarizer:
     """Text summarization service using Gemini"""
 
     def __init__(self) -> None:
-        """Initialize summarizer with Gemini client"""
-        self.gemini_client = GeminiClient()
-        logger.info("Initialized Summarizer with Gemini")
+        """Initialize summarizer with direct Gemini API"""
+        if not settings.gemini_api_key:
+            raise ValueError("GEMINI_API_KEY not set in environment")
+
+        genai.configure(api_key=settings.gemini_api_key)
+        self.model = genai.GenerativeModel("gemini-2.0-flash-exp")
+        logger.info("Initialized Summarizer with direct Gemini API")
 
     def summarize(
         self, text: str, format: str = "bullet_points", max_length: int = 500
@@ -71,16 +77,17 @@ class Summarizer:
                     f"Summary:"
                 )
 
-            # Generate summary using Gemini with caching
-            result = self.gemini_client.generate_text(
-                prompt=prompt,
-                system_prompt=system_prompt,
-                temperature=0.3,  # Lower temperature for more focused summaries
-                max_tokens=max_length * 2,  # Rough token estimate
-                use_cache=True,  # Enable caching for cost savings
+            # Generate summary using direct Gemini API
+            full_prompt = f"{system_prompt}\n\n{prompt}"
+            response = self.model.generate_content(
+                full_prompt,
+                generation_config=genai.GenerationConfig(
+                    temperature=0.3,
+                    max_output_tokens=max_length * 2,
+                ),
             )
 
-            summary = result["text"].strip()
+            summary = response.text.strip()
             summary_length = len(summary.split())
 
             logger.info(
