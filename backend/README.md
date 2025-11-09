@@ -52,6 +52,9 @@ backend/
 - Python 3.11+ (tested with 3.13)
 - Gemini API key
 
+Optional environment overrides:
+- `FFMPEG_PATH` / `FFPROBE_PATH` if ffmpeg binaries are not on `PATH`
+
 ### Setup
 
 ```bash

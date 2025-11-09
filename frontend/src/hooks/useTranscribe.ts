@@ -19,16 +19,22 @@ export const useTranscribe = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [uploadProgress, setUploadProgress] = useState(0)
+  const [isUploadingFile, setIsUploadingFile] = useState(false)
 
   const transcribe = useCallback(async (file: File) => {
     setIsLoading(true)
+    setIsUploadingFile(true)
     setError(null)
     setUploadProgress(0)
 
     try {
       const response = await transcribeAudio(file, (evt) => {
         if (!evt.total) return
-        setUploadProgress(Math.round((evt.loaded / evt.total) * 100))
+        const percent = Math.round((evt.loaded / evt.total) * 100)
+        setUploadProgress(percent)
+        if (percent >= 100) {
+          setIsUploadingFile(false)
+        }
       })
 
       setData(response)
@@ -39,6 +45,7 @@ export const useTranscribe = () => {
       throw err
     } finally {
       setIsLoading(false)
+      setIsUploadingFile(false)
     }
   }, [])
 
@@ -46,11 +53,14 @@ export const useTranscribe = () => {
     setData(null)
     setError(null)
     setUploadProgress(0)
+    setIsUploadingFile(false)
   }
 
   return {
     data,
     isLoading,
+    isUploadingFile,
+    isProcessing: isLoading && !isUploadingFile,
     error,
     uploadProgress,
     transcribe,

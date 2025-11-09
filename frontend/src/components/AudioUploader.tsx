@@ -5,6 +5,7 @@ interface AudioUploaderProps {
   onFileSelected: (file: File) => void
   onClear?: () => void
   isUploading?: boolean
+  isProcessing?: boolean
   uploadProgress?: number
   error?: string | null
   acceptedTypes?: string[]
@@ -20,12 +21,6 @@ const defaultAcceptedTypes = [
   'audio/aac',
   'audio/ogg',
   'audio/flac',
-  // Video formats
-  'video/mp4',
-  'video/webm',
-  'video/x-msvideo',
-  'video/quicktime',
-  'video/x-matroska',
   // Text formats
   'text/plain',
   'application/pdf',
@@ -45,6 +40,7 @@ export const AudioUploader = ({
   onFileSelected,
   onClear,
   isUploading = false,
+  isProcessing = false,
   uploadProgress,
   error,
   acceptedTypes = defaultAcceptedTypes,
@@ -148,14 +144,14 @@ export const AudioUploader = ({
           accept={acceptedTypes.join(',')}
           className="sr-only"
           onChange={onInputChange}
-          disabled={isUploading}
+          disabled={isUploading || isProcessing}
         />
 
         <UploadCloud className="mb-4 h-12 w-12 text-indigo-500" />
         <p className="text-lg font-semibold text-gray-900">Drag & drop your file here</p>
         <p className="text-sm text-gray-500">or click to browse files</p>
         <p className="mt-4 text-xs text-gray-400">
-          Supported: Audio (mp3, wav, m4a), Video (mp4, webm, mov), Text (txt, pdf) • Max size: {maxFileSizeMb}MB
+          Supported: Audio (mp3, wav, m4a, flac) or Text (txt, pdf) • Max size: {maxFileSizeMb}MB
         </p>
 
         {isUploading && (
@@ -169,6 +165,14 @@ export const AudioUploader = ({
             <p className="mt-1 text-center text-xs font-medium text-gray-600">
               Uploading {(uploadProgress ?? 0).toFixed(0)}%
             </p>
+          </div>
+        )}
+        {!isUploading && isProcessing && (
+          <div className="absolute inset-x-6 bottom-6">
+            <div className="flex items-center justify-center space-x-2 rounded-full bg-white/80 px-3 py-1 text-xs font-medium text-gray-600 shadow-sm">
+              <span className="h-2 w-2 animate-pulse rounded-full bg-indigo-500" />
+              <span>Processing audio... hang tight</span>
+            </div>
           </div>
         )}
       </label>
@@ -206,15 +210,6 @@ export const AudioUploader = ({
             >
               Your browser does not support the audio element.
             </audio>
-          )}
-          {previewUrl && selectedFile?.type.startsWith('video/') && (
-            <video
-              controls
-              src={previewUrl}
-              className="mt-4 w-full rounded-xl bg-gray-100 p-2"
-            >
-              Your browser does not support the video element.
-            </video>
           )}
         </div>
       )}

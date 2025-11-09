@@ -1,7 +1,9 @@
 """Transcription API endpoint"""
 
 import logging
-from typing import Any, Dict
+import tempfile
+from pathlib import Path
+from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 
@@ -16,15 +18,14 @@ router = APIRouter()
 
 @router.post("/transcribe", response_model=TranscribeResponse)
 async def transcribe_audio(
-    file: UploadFile = File(..., description="Audio, video, or text file to process"),
+    file: UploadFile = File(..., description="Audio or text file to process"),
     language: str = Form("en", description="Language code (e.g., 'en', 'es', 'fr')"),
 ) -> TranscribeResponse:
     """
-    Process audio, video, or text file to extract text transcript.
+    Process audio or text file to extract text transcript.
 
     **Supported formats:**
     - Audio: mp3, wav, m4a, ogg, flac, aac
-    - Video: mp4, webm, mov, avi, mkv
     - Text: txt, pdf
 
     **Max file size:** 200MB
@@ -32,7 +33,7 @@ async def transcribe_audio(
     **Languages:** en, es, fr, de, it, pt, nl, pl, ru, zh, ja, ko, and more
 
     Args:
-        file: Audio, video, or text file to process
+        file: Audio or text file to process
         language: Language code (default: 'en', use 'auto' for auto-detection)
 
     Returns:
@@ -49,17 +50,15 @@ async def transcribe_audio(
                 detail=f"File too large. Max size: {settings.max_file_size} bytes",
             )
 
-        # Validate file type (accept audio, video, and text)
+        # Validate file type (accept audio and text only)
         if file.content_type and not (
             file.content_type.startswith("audio/")
-            or file.content_type.startswith("video/")
             or file.content_type.startswith("text/")
             or file.content_type == "application/pdf"
         ):
             raise HTTPException(
                 status_code=400,
-                detail=f"Invalid file type: {file.content_type}. "
-                "Must be audio, video, or text file.",
+                detail=f"Invalid file type: {file.content_type}. Must be audio or text file.",
             )
 
         logger.info(
@@ -69,10 +68,13 @@ async def transcribe_audio(
 
         # Handle text files directly
         result: Dict[str, Any]
+        temp_path: Optional[str] = None
 
-        if file.content_type and (
-            file.content_type.startswith("text/") or file.content_type == "application/pdf"
-        ):
+        content_type = file.content_type or ""
+        is_text_file = content_type.startswith("text/") or content_type == "application/pdf"
+        is_audio_file = content_type.startswith("audio/")
+
+        if is_text_file:
             content = await file.read()
             if file.content_type == "application/pdf":
                 # For PDF, try to extract text
@@ -100,8 +102,9 @@ async def transcribe_audio(
                 "tokens_used": 0,
             }
         else:
-            # Initialize transcriber and transcribe audio/video
             transcriber = Transcriber()
+
+            await file.seek(0)
             result = await transcriber.transcribe(file, language=language)
 
         transcript_value = result.get("transcript", "")

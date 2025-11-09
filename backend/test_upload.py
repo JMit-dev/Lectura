@@ -26,15 +26,15 @@ genai.configure(api_key=settings.gemini_api_key)
 print("Looking for test file in data/...")
 data_dir = os.path.join(os.path.dirname(__file__), "..", "data")
 
-# Find first audio/video file
+# Find first audio file
 test_file = None
 for filename in os.listdir(data_dir):
-    if filename.endswith((".mp3", ".mp4", ".wav", ".m4a")):
+    if filename.endswith((".mp3", ".wav", ".m4a", ".flac")):
         test_file = os.path.join(data_dir, filename)
         break
 
 if not test_file:
-    print("ERROR: No audio/video files found in data/")
+    print("ERROR: No audio files found in data/")
     sys.exit(1)
 
 print(f"Found test file: {test_file}")

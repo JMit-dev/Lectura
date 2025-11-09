@@ -187,7 +187,7 @@ const Home = () => {
             Turn lectures into transcripts, summaries, and flashcards
           </h1>
           <p className="mt-4 text-lg text-gray-600">
-            Upload audio, video, or text and let Lectura handle the rest — transcripts, summaries, flashcards, and translations.
+            Upload audio or text and let Lectura handle the rest — transcripts, summaries, flashcards, and translations.
           </p>
         </header>
 
@@ -195,7 +195,8 @@ const Home = () => {
           <AudioUploader
             onFileSelected={handleFileUpload}
             onClear={handleClear}
-            isUploading={transcribe.isLoading}
+            isUploading={transcribe.isUploadingFile}
+            isProcessing={transcribe.isProcessing}
             uploadProgress={transcribe.uploadProgress}
             error={transcribe.error}
           />
@@ -203,7 +204,7 @@ const Home = () => {
           <div className="space-y-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
             <h3 className="text-lg font-semibold text-gray-900">Workflow</h3>
             <ol className="space-y-3 text-sm text-gray-600">
-              <li>1. Upload audio, video, or text file</li>
+              <li>1. Upload audio or text file</li>
               <li>2. Generate transcript automatically</li>
               <li>3. Summarize, create flashcards, or translate</li>
               <li>4. Share or download results</li>
