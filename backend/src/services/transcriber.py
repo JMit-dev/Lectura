@@ -4,7 +4,7 @@ import logging
 import os
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 # Disable progress bars before importing genai
 os.environ["TQDM_DISABLE"] = "1"
@@ -204,4 +204,3 @@ class Transcriber:
         except Exception as e:
             logger.error(f"Error transcribing audio: {str(e)}")
             raise Exception(f"Transcription failed: {str(e)}")
-

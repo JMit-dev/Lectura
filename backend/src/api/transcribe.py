@@ -1,9 +1,7 @@
 """Transcription API endpoint"""
 
 import logging
-import tempfile
-from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 
@@ -68,11 +66,9 @@ async def transcribe_audio(
 
         # Handle text files directly
         result: Dict[str, Any]
-        temp_path: Optional[str] = None
 
         content_type = file.content_type or ""
         is_text_file = content_type.startswith("text/") or content_type == "application/pdf"
-        is_audio_file = content_type.startswith("audio/")
 
         if is_text_file:
             content = await file.read()
