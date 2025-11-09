@@ -5,9 +5,11 @@ import logging
 import re
 from typing import Any, Dict, List
 
+import google.generativeai as genai
+
 from src.models.schemas import Flashcard
-from src.services.gemini import GeminiClient
 from src.services.toon import TOONParser, get_toon_flashcard_prompt
+from src.utils.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -16,19 +18,24 @@ class FlashcardGenerator:
     """Flashcard generation service using Gemini with TOON optimization"""
 
     def __init__(self) -> None:
-        """Initialize flashcard generator with Gemini client"""
-        self.gemini_client = GeminiClient()
-        logger.info("Initialized FlashcardGenerator with Gemini + TOON format")
+        """Initialize flashcard generator with direct Gemini API"""
+        if not settings.gemini_api_key:
+            raise ValueError("GEMINI_API_KEY not set in environment")
+
+        genai.configure(api_key=settings.gemini_api_key)
+        self.model = genai.GenerativeModel("gemini-2.0-flash-exp")
+        logger.info("Initialized FlashcardGenerator with direct Gemini API + TOON format")
 
     def generate_flashcards(
-        self, text: str, count: int = 10, difficulty: str = "medium", use_toon: bool = True
+        self, text: str, count: int | None = None, difficulty: str = "medium", use_toon: bool = True
     ) -> Dict[str, Any]:
         """
         Generate flashcards from text using Gemini.
 
         Args:
             text: Source text to generate flashcards from
-            count: Number of flashcards to generate (1-50)
+            count: Number of flashcards to generate (1-50).
+                   If None, auto-calculated based on text length.
             difficulty: Difficulty level ('easy', 'medium', 'hard')
             use_toon: Use TOON format for 40-50% token savings (default: True)
 
@@ -41,6 +48,12 @@ class FlashcardGenerator:
         """
         if not text or not text.strip():
             raise ValueError("Text cannot be empty")
+
+        # Auto-calculate count if not provided (1 flashcard per ~100 words)
+        if count is None:
+            word_count = len(text.split())
+            count = max(5, min(50, word_count // 100))
+            logger.info(f"Auto-calculated flashcard count: {count} (based on {word_count} words)")
 
         if count < 1 or count > 50:
             raise ValueError(f"Count must be between 1 and 50, got {count}")
@@ -69,16 +82,19 @@ class FlashcardGenerator:
                 # Fallback JSON (less efficient)
                 prompt = self._get_json_prompt(text, count, difficulty)
 
-            # Generate with Gemini
-            result = self.gemini_client.generate_text(
-                prompt=prompt,
-                system_prompt=system_prompt,
-                temperature=0.7,
-                max_tokens=count * 80,  # TOON uses fewer tokens
+            # Generate with direct Gemini API
+            full_prompt = f"{system_prompt}\n\n{prompt}"
+            response = self.model.generate_content(
+                full_prompt,
+                generation_config=genai.GenerationConfig(
+                    temperature=0.7,
+                    max_output_tokens=count * 80,
+                ),
             )
 
-            response_text = result["text"].strip()
-            tokens_used = result["tokens_used"]
+            response_text = response.text.strip()
+            # Estimate tokens used (Gemini API doesn't return usage in free tier)
+            tokens_used = len(response_text) // 4  # Rough estimate
 
             # Parse based on format
             if use_toon:
@@ -126,6 +142,13 @@ class FlashcardGenerator:
         }
 
         return f"""Generate {count} flashcards ({difficulty}: {guidelines[difficulty]}).
+
+Rules:
+- Use substantive lecture content only; skip greetings, jokes, or logistics.
+- Drop quiz/test dates or admin reminders unless they directly teach a concept.
+- Ask clear, specific questions that require understanding, not rote recall.
+- Provide concise answers that still capture the reasoning or formula involved.
+- Keep every flashcard unique and tightly focused on the lesson material.
 
 Return as JSON: [{{"question": "...", "answer": "...", "difficulty": "{difficulty}"}}]
 

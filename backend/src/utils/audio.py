@@ -1,26 +1,39 @@
-"""Audio processing utilities"""
+"""Audio-only processing utilities."""
 
+import contextlib
 import logging
 import os
+import wave
 from pathlib import Path
 from typing import Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
-# Try to import pydub, but make it optional
 try:
-    from pydub import AudioSegment
+    from pydub import AudioSegment  # type: ignore[import-untyped]
 
     PYDUB_AVAILABLE = True
 except (ImportError, ModuleNotFoundError):
     PYDUB_AVAILABLE = False
     logger.warning("pydub not available - some audio features will be limited")
 
-# Supported audio formats
+try:
+    from mutagen import File as MutagenFile  # type: ignore[import-untyped]
+    from mutagen.flac import FLAC  # type: ignore[import-untyped]
+    from mutagen.mp3 import MP3  # type: ignore[import-untyped]
+    from mutagen.mp4 import MP4  # type: ignore[import-untyped]
+
+    MUTAGEN_AVAILABLE = True
+except (ImportError, ModuleNotFoundError):
+    MUTAGEN_AVAILABLE = False
+    MutagenFile = None  # type: ignore[assignment]
+    logger.warning("mutagen not available - some duration features will be limited")
+
+# Audio formats we explicitly allow
 SUPPORTED_FORMATS = {
     "mp3": "mp3",
     "wav": "wav",
-    "m4a": "mp4",  # pydub uses 'mp4' for m4a files
+    "m4a": "mp4",
     "ogg": "ogg",
     "flac": "flac",
     "aac": "aac",
@@ -30,140 +43,87 @@ SUPPORTED_FORMATS = {
 
 def validate_audio_file(file_path: str) -> Tuple[bool, Optional[str]]:
     """
-    Validate audio file format and size.
-
-    Args:
-        file_path: Path to audio file
-
-    Returns:
-        Tuple of (is_valid, error_message)
+    Validate that the given file exists and is one of our supported audio formats.
     """
     try:
-        # Check if file exists
         if not os.path.exists(file_path):
             return False, f"File not found: {file_path}"
 
-        # Check file extension
         file_ext = Path(file_path).suffix.lower().lstrip(".")
         if file_ext not in SUPPORTED_FORMATS:
             return (
                 False,
                 f"Unsupported format: {file_ext}. "
-                f"Supported: {', '.join(SUPPORTED_FORMATS.keys())}",
+                f"Supported: {', '.join(sorted(SUPPORTED_FORMATS.keys()))}",
             )
 
-        # Check file size (max 25MB for Whisper API)
-        file_size = os.path.getsize(file_path)
-        max_size = 25 * 1024 * 1024  # 25MB in bytes
-        if file_size > max_size:
-            return False, f"File too large: {file_size} bytes (max: {max_size})"
-
-        logger.info(f"Audio file validated: {file_path} ({file_size} bytes)")
+        logger.info("Audio file validated: %s (%s)", file_path, file_ext)
         return True, None
+    except Exception as exc:  # pragma: no cover - defensive logging
+        logger.error("Error validating audio file: %s", exc)
+        return False, str(exc)
 
-    except Exception as e:
-        logger.error(f"Error validating audio file: {str(e)}")
-        return False, str(e)
+
+def _duration_from_pydub(file_path: str, file_ext: str) -> Optional[float]:
+    if not PYDUB_AVAILABLE:
+        return None
+    try:
+        format_name = SUPPORTED_FORMATS.get(file_ext, file_ext)
+        audio = AudioSegment.from_file(file_path, format=format_name)
+        return len(audio) / 1000.0
+    except Exception as exc:  # pragma: no cover - best-effort fallback
+        logger.warning("pydub failed to read duration: %s", exc)
+        return None
+
+
+def _duration_from_mutagen(file_path: str, file_ext: str) -> Optional[float]:
+    if not MUTAGEN_AVAILABLE or MutagenFile is None:
+        return None
+    try:
+        if file_ext == "mp3":
+            return float(MP3(file_path).info.length)  # type: ignore[arg-type,attr-defined]
+        if file_ext in {"m4a", "mp4", "m4b"}:
+            return float(MP4(file_path).info.length)  # type: ignore[arg-type,attr-defined]
+        if file_ext == "flac":
+            return float(FLAC(file_path).info.length)  # type: ignore[arg-type,attr-defined]
+
+        metadata = MutagenFile(file_path)
+        if metadata and metadata.info and metadata.info.length:
+            return float(metadata.info.length)
+    except Exception as exc:  # pragma: no cover - best-effort fallback
+        logger.warning("mutagen failed to read duration: %s", exc)
+    return None
+
+
+def _duration_from_wave(file_path: str, file_ext: str) -> Optional[float]:
+    if file_ext not in {"wav", "wave"}:
+        return None
+    try:
+        with contextlib.closing(wave.open(file_path, "rb")) as wav_file:
+            frames = wav_file.getnframes()
+            rate = wav_file.getframerate() or 1
+            return frames / float(rate)
+    except Exception as exc:  # pragma: no cover - best-effort fallback
+        logger.warning("wave module failed to read duration: %s", exc)
+        return None
 
 
 def get_audio_duration(file_path: str) -> float:
     """
-    Get duration of audio file in seconds.
-
-    Args:
-        file_path: Path to audio file
-
-    Returns:
-        Duration in seconds (0.0 if pydub not available)
-
-    Raises:
-        Exception: If unable to read audio file
+    Attempt to determine the duration of an audio file using pure-Python libraries only.
+    Returns 0.0 if every strategy fails.
     """
-    if not PYDUB_AVAILABLE:
-        logger.warning("pydub not available, returning 0.0 for duration")
-        return 0.0
+    file_ext = Path(file_path).suffix.lower().lstrip(".")
 
-    try:
-        file_ext = Path(file_path).suffix.lower().lstrip(".")
-        format_name = SUPPORTED_FORMATS.get(file_ext, file_ext)
+    for strategy in (
+        _duration_from_pydub,
+        _duration_from_mutagen,
+        _duration_from_wave,
+    ):
+        duration = strategy(file_path, file_ext)
+        if duration and duration > 0:
+            logger.info("Audio duration resolved via %s: %.2fs", strategy.__name__, duration)
+            return float(duration)
 
-        audio = AudioSegment.from_file(file_path, format=format_name)
-        duration = len(audio) / 1000.0  # Convert milliseconds to seconds
-
-        logger.info(f"Audio duration: {duration:.2f} seconds")
-        return duration
-
-    except Exception as e:
-        logger.error(f"Error getting audio duration: {str(e)}")
-        raise
-
-
-def convert_audio_format(input_path: str, output_path: str, target_format: str = "mp3") -> bool:
-    """
-    Convert audio file to different format.
-
-    Args:
-        input_path: Input audio file path
-        output_path: Output audio file path
-        target_format: Target format (default: 'mp3')
-
-    Returns:
-        True if conversion successful, False otherwise
-    """
-    if not PYDUB_AVAILABLE:
-        logger.error("pydub not available, cannot convert audio format")
-        return False
-
-    try:
-        file_ext = Path(input_path).suffix.lower().lstrip(".")
-        format_name = SUPPORTED_FORMATS.get(file_ext, file_ext)
-
-        audio = AudioSegment.from_file(input_path, format=format_name)
-        audio.export(output_path, format=target_format)
-
-        logger.info(f"Converted {input_path} to {output_path} ({target_format})")
-        return True
-
-    except Exception as e:
-        logger.error(f"Error converting audio format: {str(e)}")
-        return False
-
-
-def compress_audio(input_path: str, output_path: str, bitrate: str = "64k") -> bool:
-    """
-    Compress audio file to reduce size.
-
-    Args:
-        input_path: Input audio file path
-        output_path: Output audio file path
-        bitrate: Target bitrate (default: '64k')
-
-    Returns:
-        True if compression successful, False otherwise
-    """
-    if not PYDUB_AVAILABLE:
-        logger.error("pydub not available, cannot compress audio")
-        return False
-
-    try:
-        file_ext = Path(input_path).suffix.lower().lstrip(".")
-        format_name = SUPPORTED_FORMATS.get(file_ext, file_ext)
-
-        audio = AudioSegment.from_file(input_path, format=format_name)
-
-        # Export with lower bitrate for compression
-        audio.export(output_path, format="mp3", bitrate=bitrate)
-
-        original_size = os.path.getsize(input_path)
-        compressed_size = os.path.getsize(output_path)
-        savings = ((original_size - compressed_size) / original_size) * 100
-
-        logger.info(
-            f"Compressed audio: {original_size} -> {compressed_size} bytes "
-            f"({savings:.1f}% reduction)"
-        )
-        return True
-
-    except Exception as e:
-        logger.error(f"Error compressing audio: {str(e)}")
-        return False
+    logger.warning("Unable to determine audio duration, defaulting to 0.0 seconds")
+    return 0.0

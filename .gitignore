@@ -21,6 +21,7 @@ wheels/
 *.egg
 MANIFEST
 venv/
+.venv/
 env/
 ENV/
 
@@ -59,3 +60,6 @@ Thumbs.db
 # Logs
 *.log
 logs/
+
+# Data files (audio/video samples)
+data/

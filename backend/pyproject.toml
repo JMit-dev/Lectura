@@ -1,6 +1,50 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lectura-backend"
+version = "0.1.0"
+description = "FastAPI backend for the Lectura AI lecture intelligence platform."
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "Lectura" }]
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "pydantic>=2.10.0",
+    "pydantic-settings>=2.6.0",
+    "openai>=1.54.0",
+    "google-generativeai>=0.8.0",
+    "python-multipart>=0.0.12",
+    "pydub>=0.25.1",
+    "mutagen>=1.47.0",
+    "python-dotenv>=1.0.1",
+    "httpx>=0.28.0",
+    "PyPDF2>=3.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.24.0",
+    "pytest-cov>=6.0.0",
+    "black>=24.0.0",
+    "flake8>=7.1.0",
+    "pylint>=3.3.0",
+    "mypy>=1.13.0",
+    "pre-commit>=4.0.0",
+]
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
 [tool.black]
 line-length = 100
-target-version = ['py311']
+target-version = ['py312']
 include = '\.pyi?$'
 
 [tool.isort]
@@ -8,7 +52,7 @@ profile = "black"
 line_length = 100
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.13"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true

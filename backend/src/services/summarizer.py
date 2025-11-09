@@ -1,9 +1,11 @@
 """Text summarization service using Gemini"""
 
 import logging
-from typing import Dict
+from typing import Any, Dict
 
-from src.services.gemini import GeminiClient
+import google.generativeai as genai
+
+from src.utils.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -12,80 +14,102 @@ class Summarizer:
     """Text summarization service using Gemini"""
 
     def __init__(self) -> None:
-        """Initialize summarizer with Gemini client"""
-        self.gemini_client = GeminiClient()
-        logger.info("Initialized Summarizer with Gemini")
+        """Initialize summarizer with direct Gemini API"""
+        if not settings.gemini_api_key:
+            raise ValueError("GEMINI_API_KEY not set in environment")
+
+        genai.configure(api_key=settings.gemini_api_key)
+        self.model = genai.GenerativeModel("gemini-2.0-flash-exp")
+        logger.info("Initialized Summarizer with direct Gemini API")
 
     def summarize(
-        self, text: str, format: str = "bullet_points", max_length: int = 500
-    ) -> Dict[str, int]:
+        self, text: str, format: str | None = None, max_length: int = 1200
+    ) -> Dict[str, Any]:
         """
         Summarize text using Gemini.
 
         Args:
             text: Text to summarize
-            format: Format of summary ('bullet_points' or 'paragraph')
+            format: Format of summary (deprecated, ignored if provided)
             max_length: Maximum length of summary in words
 
         Returns:
-            Dict with 'summary', 'original_length', and 'summary_length'
+            Dict with 'summary' (str), 'original_length' (int), and 'summary_length' (int)
 
         Raises:
-            ValueError: If text is empty or format is invalid
+            ValueError: If text is empty
             Exception: If summarization fails
         """
         if not text or not text.strip():
             raise ValueError("Text cannot be empty")
 
-        if format not in ["bullet_points", "paragraph"]:
-            raise ValueError(f"Invalid format: {format}. Must be 'bullet_points' or 'paragraph'")
-
         try:
             original_length = len(text.split())
+            character_count = len(text)
+
+            # Adapt the target summary length based on transcript size.
+            # Default to at least 600 words, allow up to 4,000 for very large lectures.
+            adaptive_target = max(
+                600,
+                min(4000, int(max(character_count / 30, original_length * 0.2))),
+            )
+            target_words = max(max_length, adaptive_target)
+
             logger.info(
-                f"Summarizing {original_length} words in {format} format "
-                f"(max: {max_length} words)"
+                "Summarizing %s words (%s chars) with target summary length %s words",
+                original_length,
+                character_count,
+                target_words,
             )
 
-            # Create prompt based on format
-            if format == "bullet_points":
-                system_prompt = (
-                    "You are an expert at creating concise, informative summaries. "
-                    "Create bullet-point summaries that capture key ideas."
-                )
-                prompt = (
-                    f"Summarize the following text as clear bullet points. "
-                    f"Maximum {max_length} words. Focus on the main ideas and key takeaways.\n\n"
-                    f"Text:\n{text}\n\n"
-                    f"Summary (bullet points):"
-                )
-            else:  # paragraph
-                system_prompt = (
-                    "You are an expert at creating concise, flowing summaries. "
-                    "Create paragraph-form summaries that capture the essence of the content."
-                )
-                prompt = (
-                    f"Summarize the following text in a concise paragraph. "
-                    f"Maximum {max_length} words. Capture the main ideas clearly.\n\n"
-                    f"Text:\n{text}\n\n"
-                    f"Summary:"
-                )
-
-            # Generate summary using Gemini with caching
-            result = self.gemini_client.generate_text(
-                prompt=prompt,
-                system_prompt=system_prompt,
-                temperature=0.3,  # Lower temperature for more focused summaries
-                max_tokens=max_length * 2,  # Rough token estimate
-                use_cache=True,  # Enable caching for cost savings
+            # Use flexible format with headers, bullets, and paragraphs as needed
+            system_prompt = (
+                "You are a meticulous university note-taker who converts raw lecture transcripts "
+                "into comprehensive, Markdown-formatted study notes. "
+                "You filter out jokes, greetings, administrative chatter, and schedule reminders, "
+                "focusing exclusively on instructional content."
+            )
+            prompt = (
+                "You will receive a full lecture transcript that may include professor banter, "
+                "attendance checks, or other irrelevant chatter.\n\n"
+                "Create extremely detailed Markdown notes that capture every meaningful concept, "
+                "definition, example, formula, and explanation from the LESSON ONLY.\n"
+                "Follow these rules:\n"
+                "1. Ignore filler dialogue, jokes, personal stories, or small talk.\n"
+                "2. Exclude logistics like quiz/test dates, homework reminders, "
+                "or grading info unless they clarify a concept.\n"
+                "3. Use Markdown: start with `## Overview`, then add `###` "
+                "sections per major topic.\n"
+                "   Within each section use bullets, numbered steps, tables, "
+                "or nested lists to capture supporting details.\n"
+                "4. Highlight key definitions, theorems, and formulas with "
+                "bold labels or inline code.\n"
+                "5. Merge repeated explanations so the notes stay cohesive "
+                "and non-redundant while still covering every major point.\n"
+                f"6. Produce a highly detailed summary up to ~{target_words} "
+                "words (scale detail with lecture length) "
+                "so that no important lecture topic is omitted.\n\n"
+                "Transcript:\n"
+                f"{text}\n\n"
+                "Return ONLY Markdown-formatted notes."
             )
 
-            summary = result["text"].strip()
+            # Generate summary using direct Gemini API
+            full_prompt = f"{system_prompt}\n\n{prompt}"
+            response = self.model.generate_content(
+                full_prompt,
+                generation_config=genai.GenerationConfig(
+                    temperature=0.25,
+                    max_output_tokens=min(target_words * 4, 12000),
+                ),
+            )
+
+            summary = response.text.strip()
             summary_length = len(summary.split())
 
             logger.info(
                 f"Summary generated: {original_length} words -> {summary_length} words "
-                f"({summary_length/original_length*100:.1f}% of original)"
+                f"({summary_length / original_length * 100:.1f}% of original)"
             )
 
             return {

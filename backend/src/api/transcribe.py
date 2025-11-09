@@ -1,6 +1,7 @@
 """Transcription API endpoint"""
 
 import logging
+from typing import Any, Dict
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 
@@ -15,27 +16,29 @@ router = APIRouter()
 
 @router.post("/transcribe", response_model=TranscribeResponse)
 async def transcribe_audio(
-    file: UploadFile = File(..., description="Audio file to transcribe"),
+    file: UploadFile = File(..., description="Audio or text file to process"),
     language: str = Form("en", description="Language code (e.g., 'en', 'es', 'fr')"),
 ) -> TranscribeResponse:
     """
-    Transcribe audio file to text using Whisper.
+    Process audio or text file to extract text transcript.
 
-    **Supported formats:** mp3, wav, m4a, ogg, flac, aac, wma
+    **Supported formats:**
+    - Audio: mp3, wav, m4a, ogg, flac, aac
+    - Text: txt, pdf
 
-    **Max file size:** 25MB
+    **Max file size:** 200MB
 
     **Languages:** en, es, fr, de, it, pt, nl, pl, ru, zh, ja, ko, and more
 
     Args:
-        file: Audio file to transcribe
+        file: Audio or text file to process
         language: Language code (default: 'en', use 'auto' for auto-detection)
 
     Returns:
         TranscribeResponse with transcript, duration, language, and tokens_used
 
     Raises:
-        HTTPException: If transcription fails
+        HTTPException: If processing fails
     """
     try:
         # Validate file size
@@ -45,26 +48,73 @@ async def transcribe_audio(
                 detail=f"File too large. Max size: {settings.max_file_size} bytes",
             )
 
-        # Validate file type
-        if file.content_type and not file.content_type.startswith("audio/"):
-            raise HTTPException(status_code=400, detail=f"Invalid file type: {file.content_type}")
+        # Validate file type (accept audio and text only)
+        if file.content_type and not (
+            file.content_type.startswith("audio/")
+            or file.content_type.startswith("text/")
+            or file.content_type == "application/pdf"
+        ):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid file type: {file.content_type}. Must be audio or text file.",
+            )
 
         logger.info(
-            f"Transcribing audio file: {file.filename} "
-            f"(size: {file.size}, language: {language})"
+            f"Processing file: {file.filename} "
+            f"(type: {file.content_type}, size: {file.size}, language: {language})"
         )
 
-        # Initialize transcriber and transcribe
-        transcriber = Transcriber()
-        result = await transcriber.transcribe(file, language=language)
+        # Handle text files directly
+        result: Dict[str, Any]
 
-        logger.info(f"Transcription successful: {len(result['transcript'])} characters")
+        content_type = file.content_type or ""
+        is_text_file = content_type.startswith("text/") or content_type == "application/pdf"
+
+        if is_text_file:
+            content = await file.read()
+            if file.content_type == "application/pdf":
+                # For PDF, try to extract text
+                try:
+                    from io import BytesIO
+
+                    import PyPDF2
+
+                    pdf_reader = PyPDF2.PdfReader(BytesIO(content))
+                    text = ""
+                    for page in pdf_reader.pages:
+                        text += page.extract_text()
+                    transcript = text.strip()
+                except Exception as e:
+                    logger.warning(f"PDF extraction failed, using raw content: {e}")
+                    transcript = content.decode("utf-8", errors="ignore")
+            else:
+                # Plain text file
+                transcript = content.decode("utf-8", errors="ignore")
+
+            result = {
+                "transcript": transcript,
+                "duration": 0.0,
+                "language": language,
+                "tokens_used": 0,
+            }
+        else:
+            transcriber = Transcriber()
+
+            await file.seek(0)
+            result = await transcriber.transcribe(file, language=language)
+
+        transcript_value = result.get("transcript", "")
+        transcript_text = (
+            transcript_value if isinstance(transcript_value, str) else str(transcript_value)
+        )
+
+        logger.info(f"Processing successful: {len(transcript_text)} characters")
 
         return TranscribeResponse(
-            transcript=result["transcript"],
-            duration=result["duration"],
-            language=result["language"],
-            tokens_used=result["tokens_used"],
+            transcript=transcript_text,
+            duration=float(result.get("duration", 0.0)),
+            language=str(result.get("language", language)),
+            tokens_used=int(result.get("tokens_used", 0)),
         )
 
     except ValueError as e:

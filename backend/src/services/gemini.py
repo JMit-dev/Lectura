@@ -1,9 +1,10 @@
 """Gemini API client using OpenRouter"""
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from openai import OpenAI
+from openai.types.chat import ChatCompletionMessageParam
 
 from src.utils.config import settings
 
@@ -53,29 +54,32 @@ class GeminiClient:
             Exception: If API call fails
         """
         try:
-            messages = []
+            messages: List[ChatCompletionMessageParam] = []
             if system_prompt:
                 messages.append({"role": "system", "content": system_prompt})
             messages.append({"role": "user", "content": prompt})
 
             logger.debug(f"Generating text with {len(messages)} messages (cache: {use_cache})")
 
-            # Build request parameters
-            params = {
-                "model": self.model,
-                "messages": messages,
-                "temperature": temperature,
-            }
-
-            if max_tokens:
-                params["max_tokens"] = max_tokens
-
             # Add cache hint via extra headers for OpenRouter
             # OpenRouter automatically caches prompts > 1024 tokens
             if use_cache:
                 logger.debug("Prompt caching enabled (OpenRouter auto-caches >1024 tokens)")
 
-            response = self.client.chat.completions.create(**params)
+            # Create completion with explicit parameters for type safety
+            if max_tokens:
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=messages,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                )
+            else:
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=messages,
+                    temperature=temperature,
+                )
 
             text = response.choices[0].message.content or ""
             tokens_used = response.usage.total_tokens if response.usage else 0

@@ -7,7 +7,7 @@ export interface TranscribeResponse {
 
 export interface SummarizeRequest {
   text: string
-  format?: 'bullet_points' | 'paragraph'
+  format?: string
 }
 
 export interface SummarizeResponse {
@@ -24,7 +24,7 @@ export interface Flashcard {
 
 export interface FlashcardRequest {
   text: string
-  count?: number
+  count?: number | null
   difficulty?: 'easy' | 'medium' | 'hard'
 }
 

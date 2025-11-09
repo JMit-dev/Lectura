@@ -1,38 +1,44 @@
-"""Audio transcription service using Whisper via OpenRouter"""
+"""Audio transcription service using Google Gemini"""
 
 import logging
+import os
 import tempfile
 from pathlib import Path
 from typing import Any, Dict
 
-from fastapi import UploadFile
-from openai import OpenAI
+# Disable progress bars before importing genai
+os.environ["TQDM_DISABLE"] = "1"
 
-from src.utils.audio import get_audio_duration, validate_audio_file
-from src.utils.config import settings
+import google.generativeai as genai  # noqa: E402
+from fastapi import UploadFile  # noqa: E402
+
+from src.utils.audio import get_audio_duration, validate_audio_file  # noqa: E402
+from src.utils.config import settings  # noqa: E402
+
+# Disable all google.generativeai logging
+logging.getLogger("google.generativeai").setLevel(logging.CRITICAL)
+logging.getLogger("google.ai.generativelanguage").setLevel(logging.CRITICAL)
 
 logger = logging.getLogger(__name__)
 
 
 class Transcriber:
-    """Audio transcription service using Whisper via OpenRouter"""
+    """Audio transcription service using Google Gemini"""
 
     def __init__(self) -> None:
-        """Initialize Whisper client via OpenRouter"""
-        if not settings.openrouter_api_key:
-            raise ValueError("OPENROUTER_API_KEY not set in environment")
+        """Initialize Gemini client"""
+        if not settings.gemini_api_key:
+            raise ValueError("GEMINI_API_KEY not set in environment")
 
-        # OpenRouter supports OpenAI's Whisper API
-        self.client = OpenAI(
-            base_url=settings.openrouter_base_url,
-            api_key=settings.openrouter_api_key,
-        )
-        self.whisper_model = "whisper-1"  # OpenAI Whisper model
-        logger.info("Initialized Transcriber with Whisper via OpenRouter")
+        # Configure Gemini API
+        genai.configure(api_key=settings.gemini_api_key)
+        # Use gemini-2.5-flash which supports audio
+        self.model = genai.GenerativeModel("gemini-2.5-flash")
+        logger.info("Initialized Transcriber with Google Gemini (gemini-2.5-flash)")
 
     async def transcribe(self, audio_file: UploadFile, language: str = "en") -> Dict[str, Any]:
         """
-        Transcribe audio file to text.
+        Transcribe audio file to text using Gemini.
 
         Args:
             audio_file: Uploaded audio file
@@ -70,25 +76,38 @@ class Transcriber:
                 logger.warning(f"Could not get audio duration: {str(e)}")
                 duration = 0.0
 
-            # Transcribe using Whisper
-            logger.info(f"Transcribing audio file (language: {language})...")
+            # Transcribe using Gemini
+            logger.info(f"Transcribing audio file with Gemini (language: {language})...")
 
-            with open(temp_file_path, "rb") as audio:
-                response = self.client.audio.transcriptions.create(
-                    model=self.whisper_model,
-                    file=audio,
-                    language=language if language != "auto" else None,
-                    response_format="json",
+            # Upload file to Gemini
+            audio_file_gemini = genai.upload_file(temp_file_path)
+
+            # Create prompt for transcription
+            prompt = (
+                "Please transcribe this audio file. Provide only the transcript text, nothing else."
+            )
+            if language and language != "auto" and language != "en":
+                prompt = (
+                    f"Please transcribe this audio file in {language}. "
+                    "Provide only the transcript text, nothing else."
                 )
 
+            # Generate transcription
+            response = self.model.generate_content([prompt, audio_file_gemini])
             transcript = response.text
+
             logger.info(
-                f"Transcription complete: {len(transcript)} characters, " f"{duration:.2f} seconds"
+                f"Transcription complete: {len(transcript)} characters, {duration:.2f} seconds"
             )
 
-            # Estimate tokens used (Whisper pricing is per second, but we'll estimate)
-            # Whisper uses ~0.006 USD per second, approximating to token count
-            estimated_tokens = int(duration * 100)  # Rough estimate
+            # Estimate tokens used
+            estimated_tokens = int(duration * 100)
+
+            # Clean up uploaded file from Gemini
+            try:
+                genai.delete_file(audio_file_gemini.name)
+            except Exception as e:
+                logger.warning(f"Could not delete Gemini file: {str(e)}")
 
             return {
                 "transcript": transcript,
@@ -114,7 +133,7 @@ class Transcriber:
 
     def transcribe_file_path(self, file_path: str, language: str = "en") -> Dict[str, Any]:
         """
-        Transcribe audio file from file system path.
+        Transcribe audio file from file system path using Gemini.
 
         Args:
             file_path: Path to audio file
@@ -140,24 +159,38 @@ class Transcriber:
                 logger.warning(f"Could not get audio duration: {str(e)}")
                 duration = 0.0
 
-            # Transcribe using Whisper
-            logger.info(f"Transcribing audio file: {file_path} (language: {language})")
+            # Transcribe using Gemini
+            logger.info(f"Transcribing audio file with Gemini: {file_path} (language: {language})")
 
-            with open(file_path, "rb") as audio:
-                response = self.client.audio.transcriptions.create(
-                    model=self.whisper_model,
-                    file=audio,
-                    language=language if language != "auto" else None,
-                    response_format="json",
+            # Upload file to Gemini
+            audio_file_gemini = genai.upload_file(file_path)
+
+            # Create prompt for transcription
+            prompt = (
+                "Please transcribe this audio file. Provide only the transcript text, nothing else."
+            )
+            if language and language != "auto" and language != "en":
+                prompt = (
+                    f"Please transcribe this audio file in {language}. "
+                    "Provide only the transcript text, nothing else."
                 )
 
+            # Generate transcription
+            response = self.model.generate_content([prompt, audio_file_gemini])
             transcript = response.text
+
             logger.info(
-                f"Transcription complete: {len(transcript)} characters, " f"{duration:.2f} seconds"
+                f"Transcription complete: {len(transcript)} characters, {duration:.2f} seconds"
             )
 
             # Estimate tokens used
             estimated_tokens = int(duration * 100)
+
+            # Clean up uploaded file from Gemini
+            try:
+                genai.delete_file(audio_file_gemini.name)
+            except Exception as e:
+                logger.warning(f"Could not delete Gemini file: {str(e)}")
 
             return {
                 "transcript": transcript,

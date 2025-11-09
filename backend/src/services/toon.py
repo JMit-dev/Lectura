@@ -156,7 +156,7 @@ def get_toon_flashcard_prompt(text: str, count: int, difficulty: str) -> str:
         "hard": "Include complex concepts, critical thinking, and deep understanding.",
     }
 
-    prompt = f"""Generate exactly {count} flashcards from the following text.
+    prompt = f"""Generate exactly {count} flashcards from the following lecture transcript.
 
 Difficulty level: {difficulty} - {difficulty_guidelines[difficulty]}
 
@@ -169,13 +169,14 @@ D: {difficulty}
 (separate each flashcard with a blank line)
 
 Rules:
-- Questions should be clear and specific
-- Answers should be concise but complete
-- Cover different aspects of the content
-- Avoid yes/no questions
-- Make sure all {count} flashcards are unique and valuable
+- Pull only meaningful lecture content. Ignore greetings, jokes, small talk, or admin notes.
+- Surface core concepts, key processes, formulas, and cause/effect chains from the lesson.
+- Craft questions that require understanding (not trivia or yes/no answers).
+- Keep answers concise but complete—reference equations, definitions, or multi-step reasoning.
+- Vary question styles (definition, application, why/how, scenario-based) while staying clear.
+- Ensure every flashcard is unique, information-rich, and essential for the lesson.
 
-Text:
+Transcript:
 {text}
 
 TOON output:"""
