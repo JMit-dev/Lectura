@@ -81,11 +81,11 @@ def _duration_from_mutagen(file_path: str, file_ext: str) -> Optional[float]:
         return None
     try:
         if file_ext == "mp3":
-            return float(MP3(file_path).info.length)  # type: ignore[arg-type]
+            return float(MP3(file_path).info.length)  # type: ignore[arg-type,attr-defined]
         if file_ext in {"m4a", "mp4", "m4b"}:
-            return float(MP4(file_path).info.length)  # type: ignore[arg-type]
+            return float(MP4(file_path).info.length)  # type: ignore[arg-type,attr-defined]
         if file_ext == "flac":
-            return float(FLAC(file_path).info.length)  # type: ignore[arg-type]
+            return float(FLAC(file_path).info.length)  # type: ignore[arg-type,attr-defined]
 
         metadata = MutagenFile(file_path)
         if metadata and metadata.info and metadata.info.length:
