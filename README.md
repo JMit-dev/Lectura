@@ -1,239 +1,73 @@
-# 🎓 Lectura - AI Lecture Notes Generator
+# Lectura
 
-Transform lecture recordings into accessible study materials using AI. Upload audio → get transcripts, summaries, flashcards, and translations in 60+ languages.
+AI-powered lecture notes generator that transforms audio recordings into comprehensive study materials.
 
-## 🚀 Features
+## Features
 
-- **Audio Transcription**: Convert lecture recordings to text using Gemini AI
-- **Smart Summaries**: Generate concise summaries of key points
-- **Flashcards**: Automatically create study flashcards
-- **Multi-language Support**: Translate content to 60+ languages
-- **TOON Format Optimization**: Reduced API costs by 40%
+- **Audio Transcription**: Upload lecture recordings and get accurate transcripts
+- **Smart Summaries**: Generate concise summaries with adaptive length
+- **Interactive Flashcards**: Extract key concepts as Q&A pairs for active recall
+- **Multi-language Translation**: Translate content into 50+ languages
+- **Export Options**: Download as PDF, PowerPoint, or plain text
 
-## 🛠️ Tech Stack
-
-### Backend
-- Python 3.11+
-- FastAPI
-- Google Gemini API
-- Uvicorn
-
-### Frontend
-- React 18 + TypeScript
-- Vite
-- Tailwind CSS
-- Axios
-
-### DevOps
-- Docker & Docker Compose
-- GitHub Actions (CI/CD)
-- Pre-commit hooks
-
-## 📦 Installation
+## Quick Start
 
 ### Prerequisites
-- Python 3.11+
+
+- Python 3.13+
 - Node.js 18+
-- Docker (optional)
-- Gemini API Key
+- Gemini API key
 
-### Quick Start with Docker
-
-```bash
-# Clone the repository
-git clone https://github.com/your-team/lectura.git
-cd lectura
-
-# Set up environment variables
-cp backend/.env.example backend/.env
-# Add your GEMINI_API_KEY to backend/.env
-
-# Run with Docker Compose
-docker-compose up
-```
-
-The application will be available at:
-- Frontend: http://localhost:5173
-- Backend API: http://localhost:8000
-- API Docs: http://localhost:8000/docs
-
-### Manual Setup
-
-#### Backend Setup
+### Backend Setup
 
 ```bash
 cd backend
-
-# Create virtual environment
-python3.11 -m venv venv
+python3.13 -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -e '.[dev]'
 
-# Install dependencies (includes dev tooling)
-pip install -e .[dev]
-
-# Set up environment
-cp .env.example .env
-# Edit .env and add your GEMINI_API_KEY
-
-# Install pre-commit hooks
-pre-commit install
+# Create .env file with your API key
+echo "GEMINI_API_KEY=your_api_key_here" > .env
 
 # Run the server
 uvicorn src.main:app --reload
 ```
 
-#### Frontend Setup
+Backend will be available at `http://localhost:8000`
+
+### Frontend Setup
 
 ```bash
 cd frontend
-
-# Install dependencies
 npm install
-
-# Run the development server
 npm run dev
 ```
 
-## 🧪 Testing
+Frontend will be available at `http://localhost:5173`
 
-### Backend Tests
+## Usage
 
-```bash
-cd backend
-pytest --cov=src
-```
+1. Open the frontend at `http://localhost:5173`
+2. Upload an audio file (MP3, WAV, M4A, OGG, or FLAC)
+3. Wait for transcription to complete
+4. View transcript, generate summary, or create flashcards
+5. Translate to other languages if needed
+6. Export your study materials
 
-### Frontend Tests
+## Technology Stack
 
-```bash
-cd frontend
-npm run test
-```
+**Backend**: Python 3.13, FastAPI, Gemini AI, OpenRouter
+**Frontend**: React 18, TypeScript, Vite, Tailwind CSS
 
-## 📚 API Documentation
+## Documentation
 
-Once the backend is running, visit http://localhost:8000/docs for interactive API documentation.
+Complete technical documentation is available in the `/docs` folder:
 
-### Key Endpoints
+- [Documentation Index](./docs/README.md) - Start here
+- [Architecture Overview](./docs/ARCHITECTURE_INDEX.md) - System navigation
+- [API Reference](./docs/API.md) - REST API documentation
+- [Project Description](./docs/PROJECT_DESCRIPTION.md) - Project overview
 
-- `POST /api/transcribe` - Transcribe audio to text
-- `POST /api/summarize` - Generate summary
-- `POST /api/flashcards` - Create flashcards
-- `POST /api/translate` - Translate to multiple languages
+## License
 
-## 🎯 Project Structure
-
-```
-lectura/
-├── backend/          # Python FastAPI backend
-│   ├── src/          # Source code
-│   ├── tests/        # Tests
-│   └── README.md     # 👈 Backend setup guide
-│
-├── frontend/         # React TypeScript frontend
-│   ├── src/          # Source code
-│   └── README.md     # 👈 Frontend setup guide
-│
-├── docs/             # Documentation
-│   ├── API.md        # API reference
-│   ├── ARCHITECTURE.md  # System design
-│   └── README.md     # 👈 Documentation index
-│
-├── scripts/          # Automation scripts
-│   ├── setup.sh      # Initial setup
-│   ├── dev.sh        # Development servers
-│   └── README.md     # 👈 Scripts guide
-│
-├── .github/          # CI/CD workflows
-└── CLAUDE.md         # Hackathon technical plan
-```
-
-**📖 Detailed Documentation:**
-- [Backend README](./backend/README.md) - Backend setup, API development, testing
-- [Frontend README](./frontend/README.md) - Frontend setup, components, hooks
-- [Documentation Guide](./docs/README.md) - Documentation standards and index
-- [Scripts Guide](./scripts/README.md) - Automation tools and utilities
-- [Hackathon Plan](./CLAUDE.md) - Complete technical design and timeline
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## 📝 License
-
-MIT License - see LICENSE file for details
-
-## 👥 Team
-
-Built for [Hackathon Name] by Team Lectura
-
-## 🤖 Working with AI Agents
-
-This project is fully documented for AI coding assistants (Claude, GPT, Cursor, etc.):
-
-### For AI Agents to Understand the Project:
-
-1. **Start here:** Read this `README.md` for project overview
-2. **Backend work:** Read [`backend/README.md`](./backend/README.md) for:
-   - File structure and what goes where
-   - API endpoints to implement
-   - Service layer patterns
-   - Testing requirements
-3. **Frontend work:** Read [`frontend/README.md`](./frontend/README.md) for:
-   - Component structure
-   - React hooks to create
-   - API integration patterns
-   - Styling with Tailwind
-4. **Documentation:** Check [`docs/README.md`](./docs/README.md) for:
-   - API specifications
-   - Architecture decisions
-   - Code documentation standards
-5. **Automation:** See [`scripts/README.md`](./scripts/README.md) for:
-   - Available scripts
-   - How to run tests
-   - Development workflows
-
-### AI Agent Quick Commands:
-
-```bash
-# Setup everything
-./scripts/setup.sh
-
-# Start development
-./scripts/dev.sh
-
-# Run tests
-cd backend && pytest
-cd frontend && npm test
-
-# Check code quality
-cd backend && black src/ && flake8 src/
-cd frontend && npm run lint
-```
-
-### Context for AI Assistants:
-
-Each directory has a README with:
-- ✅ Clear file structure
-- ✅ What each file/directory is for
-- ✅ TODO markers for unfinished work
-- ✅ Code examples and patterns
-- ✅ Testing instructions
-- ✅ Priority order of tasks
-
-This makes it easy for AI agents to:
-- Understand the codebase quickly
-- Know where to add new code
-- Follow existing patterns
-- Write appropriate tests
-- Maintain code quality
-
-## 🙏 Acknowledgments
-
-- Powered by Google Gemini AI
-- TOON format for token optimization
-- Designed for accessibility and student success
+GPL 3.0
